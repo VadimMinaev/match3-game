@@ -213,6 +213,18 @@ function areAdjacent(r1, c1, r2, c2) {
   return dr + dc === 1;
 }
 
+// Добавление звука лопания шариков
+const popSound = new Audio('pop.mp3'); // Убедитесь, что файл pop.mp3 находится в корне проекта
+popSound.addEventListener('error', () => {
+  console.error('Ошибка загрузки звука pop.mp3. Проверьте наличие файла в корне проекта.');
+});
+
+// Добавление звука для неудачного перемещения
+const failSound = new Audio('fail.mp3'); // Убедитесь, что файл fail.mp3 находится в корне проекта
+failSound.addEventListener('error', () => {
+  console.error('Ошибка загрузки звука fail.mp3. Проверьте наличие файла в корне проекта.');
+});
+
 // Попытка обмена
 async function attemptSwap(r1, c1, r2, c2) {
   if (isProcessing) return;
@@ -234,6 +246,12 @@ async function attemptSwap(r1, c1, r2, c2) {
     if (score >= penalty) {
       score -= penalty; // Вычитаем очки за неудачный ход
       updateScore();
+      try {
+        failSound.currentTime = 0; // Сброс звука для повторного воспроизведения
+        await failSound.play(); // Воспроизведение звука неудачного перемещения
+      } catch (error) {
+        console.error('Ошибка воспроизведения звука:', error);
+      }
     } else {
       // Откат, если очков недостаточно
       [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
@@ -363,12 +381,6 @@ function addDiagonalMatches(row, col, color, matches) {
     }
   }
 }
-
-// Добавление звука лопания шариков
-const popSound = new Audio('pop.mp3'); // Убедитесь, что файл pop.mp3 находится в корне проекта
-popSound.addEventListener('error', () => {
-  console.error('Ошибка загрузки звука pop.mp3. Проверьте наличие файла в корне проекта.');
-});
 
 // Обработка совпадений (удаление, падение, новые шары, рекурсия)
 async function processMatches(matches) {

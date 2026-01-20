@@ -235,7 +235,7 @@ async function attemptSwap(r1, c1, r2, c2) {
   }
 
   // Удаление совпавших шариков
-  await removeMatches(matches);
+  await processMatches(matches);
   isProcessing = false;
 }
 

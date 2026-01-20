@@ -293,6 +293,8 @@ function findAllMatches() {
 
 // Обработка совпадений (удаление, падение, новые шары, рекурсия)
 async function processMatches(matches) {
+  console.log('Processing matches:', matches); // Отладочное сообщение
+
   // Добавляем очки
   score += matches.length * 10;
   updateScore();
@@ -301,16 +303,21 @@ async function processMatches(matches) {
   for (const { row, col } of matches) {
     board[row][col] = 0;
     const el = getBallElement(row, col);
-    if (el) el.classList.add('removing');
+    if (el) {
+      el.classList.add('removing');
+      console.log(`Removing ball at (${row}, ${col})`); // Отладочное сообщение
+    }
   }
 
   // Ждём анимацию исчезновения
   await new Promise(resolve => setTimeout(resolve, 300));
 
   // Гравитация: шарики падают вниз
+  console.log('Applying gravity'); // Отладочное сообщение
   applyGravity();
 
   // Заполняем пустоты сверху новыми шарами
+  console.log('Filling top rows'); // Отладочное сообщение
   fillTopRows();
 
   // Перерисовка
@@ -318,6 +325,7 @@ async function processMatches(matches) {
 
   // Проверяем новые совпадения
   const newMatches = findAllMatches();
+  console.log('New matches found:', newMatches); // Отладочное сообщение
   if (newMatches.length > 0) {
     await new Promise(resolve => setTimeout(resolve, 200)); // пауза перед каскадом
     await processMatches(newMatches);

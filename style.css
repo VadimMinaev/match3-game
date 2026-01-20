@@ -84,19 +84,21 @@ body {
   }
 }
 
-/* Адаптивная верстка для мобильных устройств */
+/* Улучшенная адаптивная верстка для мобильных устройств */
 @media (max-width: 768px) {
   .game-container {
     width: 100%;
-    max-width: 400px;
+    max-width: 360px;
     padding: 10px;
   }
 
   .game-board {
-    grid-template-columns: repeat(8, 40px);
-    grid-template-rows: repeat(8, 40px);
+    width: 100%;
+    height: auto;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
     gap: 2px;
-    padding: 6px;
+    padding: 4px;
   }
 
   .ball {
@@ -105,12 +107,14 @@ body {
   }
 
   .score {
-    font-size: 18px;
+    font-size: 16px;
+    margin-bottom: 10px;
   }
 
   .game-rules {
     font-size: 14px;
     text-align: left;
+    margin-top: 10px;
   }
 }
 

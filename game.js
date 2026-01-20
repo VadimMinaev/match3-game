@@ -227,7 +227,7 @@ async function attemptSwap(r1, c1, r2, c2) {
 
   // Проверка на совпадения
   const matches = findAllMatches();
-  const penalty = level === 1 ? 10 : 20; // Стоимость неудачного хода зависит от уровня
+  const penalty = 10 * level; // Стоимость неудачного хода увеличивается с уровнем
 
   if (matches.length === 0) {
     // Если нет совпадений, проверяем очки
@@ -247,7 +247,8 @@ async function attemptSwap(r1, c1, r2, c2) {
   }
 
   // Проверка на переход на следующий уровень
-  if (score >= 1000 && level === 1) {
+  const nextLevelScore = 500 * Math.pow(2, level - 1); // Уровни растут экспоненциально
+  if (score >= nextLevelScore) {
     nextLevel();
     isProcessing = false;
     return;
@@ -256,17 +257,45 @@ async function attemptSwap(r1, c1, r2, c2) {
   isProcessing = false;
 }
 
+function showModal(message) {
+  // Создаем затемнение фона
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+
+  // Создаем модальное окно
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+
+  // Добавляем текст сообщения
+  const messageEl = document.createElement('p');
+  messageEl.textContent = message;
+  modal.appendChild(messageEl);
+
+  // Добавляем кнопку закрытия
+  const closeButton = document.createElement('button');
+  closeButton.textContent = '×';
+  closeButton.className = 'modal-close';
+  closeButton.addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  modal.appendChild(closeButton);
+
+  // Добавляем модальное окно на затемнение
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+// Обновление функции nextLevel для использования модального окна
 function nextLevel() {
-  level = 2; // Переход на второй уровень
-  alert('Поздравляем! Вы достигли второго уровня! Теперь стоимость неудачного хода увеличена до 20 очков.');
-  // Здесь можно добавить дополнительные изменения для второго уровня, например, усложнение игры
+  level++;
+  showModal(`Поздравляем! Вы достигли уровня ${level}! Теперь стоимость неудачного хода увеличена до ${10 * level} очков.`);
 }
 
 // Поиск всех совпадений
 function findAllMatches() {
   const matches = new Set();
 
-  // Горизонтальные
+  // Горизонтальные совпадения
   for (let row = 0; row < BOARD_SIZE; row++) {
     let count = 1;
     let color = board[row][0];
@@ -277,6 +306,7 @@ function findAllMatches() {
         if (count >= MATCH_LENGTH) {
           for (let i = col - count; i < col; i++) {
             matches.add(`${row},${i}`);
+            addDiagonalMatches(row, i, color, matches); // Проверяем угловые совпадения
           }
         }
         if (col < BOARD_SIZE) {
@@ -287,7 +317,7 @@ function findAllMatches() {
     }
   }
 
-  // Вертикальные
+  // Вертикальные совпадения
   for (let col = 0; col < BOARD_SIZE; col++) {
     let count = 1;
     let color = board[0][col];
@@ -298,6 +328,7 @@ function findAllMatches() {
         if (count >= MATCH_LENGTH) {
           for (let i = row - count; i < row; i++) {
             matches.add(`${i},${col}`);
+            addDiagonalMatches(i, col, color, matches); // Проверяем угловые совпадения
           }
         }
         if (row < BOARD_SIZE) {
@@ -312,6 +343,25 @@ function findAllMatches() {
     const [r, c] = pos.split(',').map(Number);
     return { row: r, col: c };
   });
+}
+
+// Добавление угловых совпадений
+function addDiagonalMatches(row, col, color, matches) {
+  const directions = [
+    [-1, -1], [-1, 1], [1, -1], [1, 1] // Диагональные направления
+  ];
+
+  for (const [dr, dc] of directions) {
+    const r = row + dr;
+    const c = col + dc;
+    if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && board[r][c] === color) {
+      const pos = `${r},${c}`;
+      if (!matches.has(pos)) {
+        matches.add(pos);
+        addDiagonalMatches(r, c, color, matches); // Рекурсивно проверяем угловые совпадения
+      }
+    }
+  }
 }
 
 // Обработка совпадений (удаление, падение, новые шары, рекурсия)

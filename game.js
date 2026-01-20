@@ -247,7 +247,7 @@ async function attemptSwap(r1, c1, r2, c2) {
   }
 
   // Проверка на переход на следующий уровень
-  if (score >= 500 && level === 1) {
+  if (score >= 1000 && level === 1) {
     nextLevel();
     isProcessing = false;
     return;

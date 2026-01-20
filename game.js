@@ -179,9 +179,10 @@ function selectBall(row, col) {
       selectedBall = null;
     } else if (areAdjacent(r1, c1, row, col)) {
       // Попытка обмена
-      attemptSwap(r1, c1, row, col);
       highlightBall(r1, c1, false);
-      selectedBall = null;
+      attemptSwap(r1, c1, row, col).then(() => {
+        selectedBall = null; // Сброс выделения после завершения обмена
+      });
     } else {
       // Новый выбор
       highlightBall(r1, c1, false);

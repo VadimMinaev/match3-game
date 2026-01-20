@@ -434,7 +434,7 @@ function fillTopRows() {
 
 // Обновление счётчика
 function updateScore() {
-  scoreEl.textContent = score;
+  scoreEl.textContent = `${score} ₽`;
 }
 
 // Запуск игры

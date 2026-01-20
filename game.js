@@ -221,18 +221,21 @@ async function attemptSwap(r1, c1, r2, c2) {
   [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
   renderBoard();
 
+  // Небольшая задержка для отображения обмена
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
   // Проверка на совпадения
   const matches = findAllMatches();
   if (matches.length === 0) {
-    // Откат
+    // Откат, если нет совпадений
     [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
     renderBoard();
     isProcessing = false;
     return;
   }
 
-  // Удаление совпадений и каскад
-  await processMatches(matches);
+  // Удаление совпавших шариков
+  await removeMatches(matches);
   isProcessing = false;
 }
 

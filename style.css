@@ -84,17 +84,18 @@ body {
   }
 }
 
-/* Улучшенная адаптивная верстка для мобильных устройств */
+/* Исправление адаптивной верстки для мобильных устройств */
 @media (max-width: 768px) {
   .game-container {
     width: 100%;
-    max-width: 360px;
+    max-width: 400px;
     padding: 10px;
   }
 
   .game-board {
     width: 100%;
-    height: auto;
+    max-width: 320px;
+    aspect-ratio: 1 / 1; /* Сохраняем квадратное соотношение сторон */
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
     gap: 2px;
@@ -107,7 +108,7 @@ body {
   }
 
   .score {
-    font-size: 16px;
+    font-size: 18px;
     margin-bottom: 10px;
   }
 

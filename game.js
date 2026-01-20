@@ -247,7 +247,7 @@ async function attemptSwap(r1, c1, r2, c2) {
   }
 
   // Проверка на переход на следующий уровень
-  const nextLevelScore = 500 * Math.pow(2, level - 1); // Уровни растут экспоненциально
+  const nextLevelScore = 1000 * Math.pow(2, level - 1); // Уровни растут экспоненциально
   if (score >= nextLevelScore) {
     nextLevel();
     isProcessing = false;

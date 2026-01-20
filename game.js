@@ -225,6 +225,11 @@ failSound.addEventListener('error', () => {
   console.error('Ошибка загрузки звука fail.mp3. Проверьте наличие файла в корне проекта.');
 });
 
+// Добавление отладочного сообщения для проверки звука
+failSound.addEventListener('canplaythrough', () => {
+  console.log('Звук fail.mp3 успешно загружен и готов к воспроизведению.');
+});
+
 // Попытка обмена
 async function attemptSwap(r1, c1, r2, c2) {
   if (isProcessing) return;

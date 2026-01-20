@@ -123,3 +123,29 @@ body {
 .modal-close:hover {
   color: #e74c3c;
 }
+
+/* Стили для блока с правилами */
+.game-rules {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #555;
+}
+
+.game-rules h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.game-rules ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+
+.game-rules li {
+  margin-bottom: 8px;
+}

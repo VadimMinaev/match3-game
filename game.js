@@ -366,6 +366,9 @@ function addDiagonalMatches(row, col, color, matches) {
 
 // Добавление звука лопания шариков
 const popSound = new Audio('pop.mp3'); // Убедитесь, что файл pop.mp3 находится в корне проекта
+popSound.addEventListener('error', () => {
+  console.error('Ошибка загрузки звука pop.mp3. Проверьте наличие файла в корне проекта.');
+});
 
 // Обработка совпадений (удаление, падение, новые шары, рекурсия)
 async function processMatches(matches) {
@@ -382,7 +385,12 @@ async function processMatches(matches) {
     if (el) {
       el.classList.add('removing');
       console.log(`Removing ball at (${row}, ${col})`); // Отладочное сообщение
-      popSound.play(); // Воспроизведение звука лопания
+      try {
+        popSound.currentTime = 0; // Сброс звука для повторного воспроизведения
+        await popSound.play(); // Воспроизведение звука лопания
+      } catch (error) {
+        console.error('Ошибка воспроизведения звука:', error);
+      }
     }
   }
 

@@ -525,17 +525,18 @@ async function applyGravity() {
 async function animateFalling(moves) {
   if (moves.length === 0) return;
   
-  // Сохраняем позиции старых элементов ДО обновления
-  const oldPositions = new Map();
+  // Сохраняем старые элементы и их позиции ДО обновления DOM (как в animateSwap)
+  const ballAnimations = [];
   for (const move of moves) {
     const oldBall = getBallElement(move.fromRow, move.fromCol);
     if (oldBall) {
       try {
         const rect = oldBall.getBoundingClientRect();
-        const boardRect = gameBoardEl.getBoundingClientRect();
-        oldPositions.set(`${move.toRow},${move.toCol}`, {
+        ballAnimations.push({
           move: move,
-          top: rect.top - boardRect.top
+          element: oldBall,
+          startX: rect.left,
+          startY: rect.top
         });
       } catch (e) {
         console.error('Error getting old position:', e);
@@ -553,42 +554,38 @@ async function animateFalling(moves) {
     });
   });
   
-  // Применяем анимацию падения через transform с более заметной анимацией
-  const animations = [];
-  for (const [key, { move, top: oldTop }] of oldPositions) {
+  // Применяем анимацию падения для каждого шара (как в animateSwap)
+  for (const { move, element: oldBall, startX, startY } of ballAnimations) {
     const newBall = getBallElement(move.toRow, move.toCol);
     if (newBall) {
       try {
         const newRect = newBall.getBoundingClientRect();
-        const boardRect = gameBoardEl.getBoundingClientRect();
-        const newTop = newRect.top - boardRect.top;
         
-        // Вычисляем расстояние падения
-        const fallDistance = oldTop - newTop;
+        // Вычисляем смещение (как в animateSwap)
+        const deltaX = newRect.left - startX;
+        const deltaY = newRect.top - startY;
         
-        if (fallDistance > 1) {
-          // Устанавливаем начальную позицию (выше) через transform
-          newBall.style.transform = `translateY(${-fallDistance}px)`;
-          newBall.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-          newBall.style.willChange = 'transform';
-          newBall.style.zIndex = '10';
-          
-          animations.push({ ball: newBall, distance: fallDistance });
-        }
+        // Пропускаем если смещение слишком мало
+        if (Math.abs(deltaY) < 1 && Math.abs(deltaX) < 1) continue;
+        
+        // Устанавливаем начальные стили для анимации
+        newBall.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        newBall.style.zIndex = '10';
+        
+        // Устанавливаем начальную позицию (старая позиция)
+        newBall.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
+        
+        // Запускаем анимацию перемещения к новой позиции
+        requestAnimationFrame(() => {
+          if (newBall.parentNode) {
+            newBall.style.transform = 'translate(0, 0)';
+          }
+        });
       } catch (e) {
         console.error('Error animating ball:', e);
       }
     }
   }
-  
-  // Запускаем все анимации одновременно
-  requestAnimationFrame(() => {
-    for (const { ball } of animations) {
-      if (ball.parentNode) {
-        ball.style.transform = 'translateY(0)';
-      }
-    }
-  });
   
   // Ждем завершения анимации
   await new Promise(resolve => setTimeout(resolve, 300));
@@ -599,7 +596,6 @@ async function animateFalling(moves) {
     if (ball && ball.parentNode) {
       ball.style.transform = '';
       ball.style.transition = '';
-      ball.style.willChange = '';
       ball.style.zIndex = '';
     }
   }

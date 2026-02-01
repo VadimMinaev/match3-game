@@ -214,25 +214,37 @@ async function animateSwap(r1, c1, r2, c2) {
   
   if (!ball1 || !ball2) return;
   
+  // Небольшая задержка для мобильных устройств для правильного получения позиций
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  
   // Получаем позиции элементов
   const rect1 = ball1.getBoundingClientRect();
   const rect2 = ball2.getBoundingClientRect();
-  const boardRect = gameBoardEl.getBoundingClientRect();
   
   // Вычисляем смещения
   const deltaX = (rect2.left - rect1.left);
   const deltaY = (rect2.top - rect1.top);
   
-  // Устанавливаем начальные стили для анимации
+  // Устанавливаем начальные стили для анимации с GPU ускорением
   ball1.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
   ball2.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+  ball1.style.willChange = 'transform';
+  ball2.style.willChange = 'transform';
   ball1.style.zIndex = '10';
   ball2.style.zIndex = '10';
+  ball1.style.backfaceVisibility = 'hidden';
+  ball2.style.backfaceVisibility = 'hidden';
   
-  // Запускаем анимацию обмена
+  // Принудительный reflow для мобильных
+  void ball1.offsetHeight;
+  void ball2.offsetHeight;
+  
+  // Запускаем анимацию обмена (используем translate3d для GPU ускорения)
   requestAnimationFrame(() => {
-    ball1.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-    ball2.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
+    requestAnimationFrame(() => {
+      ball1.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
+      ball2.style.transform = `translate3d(${-deltaX}px, ${-deltaY}px, 0)`;
+    });
   });
   
   // Ждем завершения анимации
@@ -241,10 +253,14 @@ async function animateSwap(r1, c1, r2, c2) {
   // Убираем стили
   ball1.style.transform = '';
   ball1.style.transition = '';
+  ball1.style.willChange = '';
   ball1.style.zIndex = '';
+  ball1.style.backfaceVisibility = '';
   ball2.style.transform = '';
   ball2.style.transition = '';
+  ball2.style.willChange = '';
   ball2.style.zIndex = '';
+  ball2.style.backfaceVisibility = '';
 }
 
 // Проверка смежности
@@ -568,18 +584,25 @@ async function animateFalling(moves) {
         // Пропускаем если смещение слишком мало
         if (Math.abs(deltaY) < 1 && Math.abs(deltaX) < 1) continue;
         
-        // Устанавливаем начальные стили для анимации
+        // Устанавливаем начальные стили для анимации с GPU ускорением
         newBall.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        newBall.style.willChange = 'transform';
         newBall.style.zIndex = '10';
+        newBall.style.backfaceVisibility = 'hidden';
         
-        // Устанавливаем начальную позицию (старая позиция)
-        newBall.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
+        // Устанавливаем начальную позицию (старая позиция) - используем translate3d для GPU
+        newBall.style.transform = `translate3d(${-deltaX}px, ${-deltaY}px, 0)`;
+        
+        // Принудительный reflow для мобильных
+        void newBall.offsetHeight;
         
         // Запускаем анимацию перемещения к новой позиции
         requestAnimationFrame(() => {
-          if (newBall.parentNode) {
-            newBall.style.transform = 'translate(0, 0)';
-          }
+          requestAnimationFrame(() => {
+            if (newBall.parentNode) {
+              newBall.style.transform = 'translate3d(0, 0, 0)';
+            }
+          });
         });
       } catch (e) {
         console.error('Error animating ball:', e);
@@ -596,7 +619,9 @@ async function animateFalling(moves) {
     if (ball && ball.parentNode) {
       ball.style.transform = '';
       ball.style.transition = '';
+      ball.style.willChange = '';
       ball.style.zIndex = '';
+      ball.style.backfaceVisibility = '';
     }
   }
 }

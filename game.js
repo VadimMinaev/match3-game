@@ -469,35 +469,57 @@ async function applyGravity() {
 async function animateFalling(moves) {
   if (moves.length === 0) return;
   
-  // Обновляем DOM с новыми позициями
-  renderBoard();
-  
-  // Применяем анимацию падения к перемещенным шарам
+  // Сохраняем позиции старых элементов ДО обновления
+  const oldPositions = new Map();
   for (const move of moves) {
-    const ball = getBallElement(move.toRow, move.toCol);
-    if (ball) {
-      // Вычисляем расстояние падения
-      const cellHeight = gameBoardEl.offsetHeight / BOARD_SIZE;
-      const fallDistance = (move.toRow - move.fromRow) * cellHeight;
-      
-      // Устанавливаем начальную позицию (выше)
-      ball.style.transform = `translateY(-${fallDistance}px)`;
-      ball.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    const oldBall = getBallElement(move.fromRow, move.fromCol);
+    if (oldBall) {
+      const rect = oldBall.getBoundingClientRect();
+      const boardRect = gameBoardEl.getBoundingClientRect();
+      oldPositions.set(`${move.toRow},${move.toCol}`, {
+        move: move,
+        top: rect.top - boardRect.top
+      });
     }
   }
   
-  // Запускаем анимацию для всех шаров одновременно
-  requestAnimationFrame(() => {
-    for (const move of moves) {
-      const ball = getBallElement(move.toRow, move.toCol);
-      if (ball) {
-        ball.style.transform = 'translateY(0)';
-      }
-    }
+  // Обновляем DOM с новыми позициями
+  renderBoard();
+  
+  // Ждем отрисовки нового состояния
+  await new Promise(resolve => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    });
   });
   
+  // Применяем анимацию падения через transform
+  for (const [key, { move, top: oldTop }] of oldPositions) {
+    const newBall = getBallElement(move.toRow, move.toCol);
+    if (newBall) {
+      const newRect = newBall.getBoundingClientRect();
+      const boardRect = gameBoardEl.getBoundingClientRect();
+      const newTop = newRect.top - boardRect.top;
+      
+      // Вычисляем расстояние падения
+      const fallDistance = oldTop - newTop;
+      
+      if (fallDistance > 1) {
+        // Устанавливаем начальную позицию (выше) через transform
+        newBall.style.transform = `translateY(${-fallDistance}px)`;
+        newBall.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)`;
+        newBall.style.willChange = 'transform';
+        
+        // Запускаем анимацию в следующем кадре
+        requestAnimationFrame(() => {
+          newBall.style.transform = 'translateY(0)';
+        });
+      }
+    }
+  }
+  
   // Ждем завершения анимации
-  await new Promise(resolve => setTimeout(resolve, 400));
+  await new Promise(resolve => setTimeout(resolve, 500));
   
   // Убираем inline стили
   for (const move of moves) {
@@ -505,6 +527,7 @@ async function animateFalling(moves) {
     if (ball) {
       ball.style.transform = '';
       ball.style.transition = '';
+      ball.style.willChange = '';
     }
   }
 }

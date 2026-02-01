@@ -207,6 +207,46 @@ function getBallElement(row, col) {
   return document.querySelector(`.ball[data-row="${row}"][data-col="${col}"]`);
 }
 
+// Анимация обмена местами двух шаров
+async function animateSwap(r1, c1, r2, c2) {
+  const ball1 = getBallElement(r1, c1);
+  const ball2 = getBallElement(r2, c2);
+  
+  if (!ball1 || !ball2) return;
+  
+  // Получаем позиции элементов
+  const rect1 = ball1.getBoundingClientRect();
+  const rect2 = ball2.getBoundingClientRect();
+  const boardRect = gameBoardEl.getBoundingClientRect();
+  
+  // Вычисляем смещения
+  const deltaX = (rect2.left - rect1.left);
+  const deltaY = (rect2.top - rect1.top);
+  
+  // Устанавливаем начальные стили для анимации
+  ball1.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+  ball2.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+  ball1.style.zIndex = '10';
+  ball2.style.zIndex = '10';
+  
+  // Запускаем анимацию обмена
+  requestAnimationFrame(() => {
+    ball1.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    ball2.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
+  });
+  
+  // Ждем завершения анимации
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  // Убираем стили
+  ball1.style.transform = '';
+  ball1.style.transition = '';
+  ball1.style.zIndex = '';
+  ball2.style.transform = '';
+  ball2.style.transition = '';
+  ball2.style.zIndex = '';
+}
+
 // Проверка смежности
 function areAdjacent(r1, c1, r2, c2) {
   const dr = Math.abs(r1 - r2);
@@ -236,12 +276,14 @@ async function attemptSwap(r1, c1, r2, c2) {
   if (isProcessing) return;
   isProcessing = true;
 
-  // Обмен
-  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
-  renderBoard();
+  // Анимируем обмен местами
+  await animateSwap(r1, c1, r2, c2);
 
-  // Небольшая задержка для отображения обмена
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // Обмен в данных
+  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+  
+  // Обновляем DOM после анимации
+  renderBoard();
 
   // Проверка на совпадения
   const matches = findAllMatches();
@@ -425,7 +467,7 @@ async function processMatches(matches) {
   }
 
   // Ждём анимацию сгорания
-  await new Promise(resolve => setTimeout(resolve, 400));
+  await new Promise(resolve => setTimeout(resolve, 200));
 
   // Гравитация: шарики падают вниз
   console.log('Applying gravity'); // Отладочное сообщение
@@ -621,7 +663,7 @@ async function animateSpawning(newBalls) {
   }
   
   // Ждем завершения анимации
-  await new Promise(resolve => setTimeout(resolve, 400));
+  await new Promise(resolve => setTimeout(resolve, 200));
   
   // Убираем inline стили
   for (const { row, col } of newBalls) {
@@ -639,7 +681,7 @@ function updateScore() {
   scoreEl.textContent = `${score} ₽`;
   
   // Проверяем достижение 10000 баллов
-  if (score >= 1000 && !fireworksShown) {
+  if (score >= 10000 && !fireworksShown) {
     fireworksShown = true;
     triggerFireworks();
   }

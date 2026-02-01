@@ -214,7 +214,7 @@ h1 {
 }
 
 .ball.burning {
-  animation: burn 0.4s ease-out forwards;
+  animation: burn 0.2s ease-out forwards;
   z-index: 100;
 }
 

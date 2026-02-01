@@ -396,12 +396,24 @@ async function processMatches(matches) {
   score += matches.length * 10;
   updateScore();
 
-  // Удаляем шарики
+  // Сначала вибрируем шарики перед удалением
+  for (const { row, col } of matches) {
+    const el = getBallElement(row, col);
+    if (el) {
+      el.classList.add('vibrating');
+    }
+  }
+  
+  // Ждём вибрацию
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  // Затем сжигаем шарики огнем
   for (const { row, col } of matches) {
     board[row][col] = 0;
     const el = getBallElement(row, col);
     if (el) {
-      el.classList.add('removing');
+      el.classList.remove('vibrating');
+      el.classList.add('burning');
       console.log(`Removing ball at (${row}, ${col})`); // Отладочное сообщение
       try {
         popSound.currentTime = 0; // Сброс звука для повторного воспроизведения
@@ -412,8 +424,8 @@ async function processMatches(matches) {
     }
   }
 
-  // Ждём анимацию исчезновения
-  await new Promise(resolve => setTimeout(resolve, 300));
+  // Ждём анимацию сгорания
+  await new Promise(resolve => setTimeout(resolve, 400));
 
   // Гравитация: шарики падают вниз
   console.log('Applying gravity'); // Отладочное сообщение
@@ -461,9 +473,7 @@ async function applyGravity() {
   
   // Анимируем падение шаров
   if (moves.length > 0) {
-    // Временно отключаем анимацию для отладки
-    renderBoard();
-    // await animateFalling(moves);
+    await animateFalling(moves);
   } else {
     renderBoard();
   }
@@ -501,7 +511,8 @@ async function animateFalling(moves) {
     });
   });
   
-  // Применяем анимацию падения через transform
+  // Применяем анимацию падения через transform с более заметной анимацией
+  const animations = [];
   for (const [key, { move, top: oldTop }] of oldPositions) {
     const newBall = getBallElement(move.toRow, move.toCol);
     if (newBall) {
@@ -516,15 +527,11 @@ async function animateFalling(moves) {
         if (fallDistance > 1) {
           // Устанавливаем начальную позицию (выше) через transform
           newBall.style.transform = `translateY(${-fallDistance}px)`;
-          newBall.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+          newBall.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
           newBall.style.willChange = 'transform';
+          newBall.style.zIndex = '10';
           
-          // Запускаем анимацию в следующем кадре
-          requestAnimationFrame(() => {
-            if (newBall.parentNode) {
-              newBall.style.transform = 'translateY(0)';
-            }
-          });
+          animations.push({ ball: newBall, distance: fallDistance });
         }
       } catch (e) {
         console.error('Error animating ball:', e);
@@ -532,8 +539,17 @@ async function animateFalling(moves) {
     }
   }
   
+  // Запускаем все анимации одновременно
+  requestAnimationFrame(() => {
+    for (const { ball } of animations) {
+      if (ball.parentNode) {
+        ball.style.transform = 'translateY(0)';
+      }
+    }
+  });
+  
   // Ждем завершения анимации
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 600));
   
   // Убираем inline стили
   for (const move of moves) {
@@ -542,6 +558,7 @@ async function animateFalling(moves) {
       ball.style.transform = '';
       ball.style.transition = '';
       ball.style.willChange = '';
+      ball.style.zIndex = '';
     }
   }
 }

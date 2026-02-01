@@ -233,42 +233,43 @@ async function animateSwap(r1, c1, r2, c2) {
   const deltaX = (rect2.left - rect1.left);
   const deltaY = (rect2.top - rect1.top);
   
-  // Для мобильных используем более простой и надежный подход
+  // Для мобильных используем абсолютное позиционирование для надежности
   if (isMobile) {
-    // Устанавливаем стили с принудительным GPU ускорением
-    ball1.style.cssText = `
-      transition: transform 0.3s ease-out !important;
-      transform: translate3d(${deltaX}px, ${deltaY}px, 0) !important;
-      will-change: transform !important;
-      z-index: 10 !important;
-      -webkit-transform: translate3d(${deltaX}px, ${deltaY}px, 0) !important;
-      -webkit-transition: -webkit-transform 0.3s ease-out !important;
-    `;
-    ball2.style.cssText = `
-      transition: transform 0.3s ease-out !important;
-      transform: translate3d(${-deltaX}px, ${-deltaY}px, 0) !important;
-      will-change: transform !important;
-      z-index: 10 !important;
-      -webkit-transform: translate3d(${-deltaX}px, ${-deltaY}px, 0) !important;
-      -webkit-transition: -webkit-transform 0.3s ease-out !important;
-    `;
+    // Сохраняем размеры
+    const width1 = rect1.width;
+    const height1 = rect1.height;
+    const width2 = rect2.width;
+    const height2 = rect2.height;
+    
+    // Переводим в абсолютное позиционирование
+    ball1.style.position = 'absolute';
+    ball1.style.left = rect1.left + 'px';
+    ball1.style.top = rect1.top + 'px';
+    ball1.style.width = width1 + 'px';
+    ball1.style.height = height1 + 'px';
+    ball1.style.zIndex = '100';
+    ball1.style.transition = 'left 0.3s ease-out, top 0.3s ease-out';
+    ball1.style.margin = '0';
+    
+    ball2.style.position = 'absolute';
+    ball2.style.left = rect2.left + 'px';
+    ball2.style.top = rect2.top + 'px';
+    ball2.style.width = width2 + 'px';
+    ball2.style.height = height2 + 'px';
+    ball2.style.zIndex = '100';
+    ball2.style.transition = 'left 0.3s ease-out, top 0.3s ease-out';
+    ball2.style.margin = '0';
     
     // Принудительный reflow
     void ball1.offsetHeight;
     void ball2.offsetHeight;
     
-    // Запускаем анимацию обратно
+    // Запускаем анимацию перемещения
     setTimeout(() => {
-      ball1.style.cssText = `
-        transition: transform 0.3s ease-out !important;
-        transform: translate3d(0, 0, 0) !important;
-        -webkit-transform: translate3d(0, 0, 0) !important;
-      `;
-      ball2.style.cssText = `
-        transition: transform 0.3s ease-out !important;
-        transform: translate3d(0, 0, 0) !important;
-        -webkit-transform: translate3d(0, 0, 0) !important;
-      `;
+      ball1.style.left = rect2.left + 'px';
+      ball1.style.top = rect2.top + 'px';
+      ball2.style.left = rect1.left + 'px';
+      ball2.style.top = rect1.top + 'px';
     }, 10);
   } else {
     // Для десктопа используем стандартный подход
@@ -296,8 +297,27 @@ async function animateSwap(r1, c1, r2, c2) {
   await new Promise(resolve => setTimeout(resolve, 300));
   
   // Убираем стили
-  ball1.style.cssText = '';
-  ball2.style.cssText = '';
+  if (isMobile) {
+    ball1.style.position = '';
+    ball1.style.left = '';
+    ball1.style.top = '';
+    ball1.style.width = '';
+    ball1.style.height = '';
+    ball1.style.zIndex = '';
+    ball1.style.transition = '';
+    ball1.style.margin = '';
+    ball2.style.position = '';
+    ball2.style.left = '';
+    ball2.style.top = '';
+    ball2.style.width = '';
+    ball2.style.height = '';
+    ball2.style.zIndex = '';
+    ball2.style.transition = '';
+    ball2.style.margin = '';
+  } else {
+    ball1.style.cssText = '';
+    ball2.style.cssText = '';
+  }
 }
 
 // Проверка смежности
@@ -626,25 +646,25 @@ async function animateFalling(moves) {
         if (Math.abs(deltaY) < 1 && Math.abs(deltaX) < 1) continue;
         
         if (isMobile) {
-          // Для мобильных используем более простой и надежный подход
-          newBall.style.cssText = `
-            transition: transform 0.3s ease-out !important;
-            transform: translate3d(${-deltaX}px, ${-deltaY}px, 0) !important;
-            will-change: transform !important;
-            z-index: 10 !important;
-            -webkit-transform: translate3d(${-deltaX}px, ${-deltaY}px, 0) !important;
-            -webkit-transition: -webkit-transform 0.3s ease-out !important;
-          `;
+          // Для мобильных используем абсолютное позиционирование
+          const width = newRect.width;
+          const height = newRect.height;
+          
+          newBall.style.position = 'absolute';
+          newBall.style.left = startX + 'px';
+          newBall.style.top = startY + 'px';
+          newBall.style.width = width + 'px';
+          newBall.style.height = height + 'px';
+          newBall.style.zIndex = '100';
+          newBall.style.transition = 'left 0.3s ease-out, top 0.3s ease-out';
+          newBall.style.margin = '0';
           
           void newBall.offsetHeight;
           
           setTimeout(() => {
             if (newBall.parentNode) {
-              newBall.style.cssText = `
-                transition: transform 0.3s ease-out !important;
-                transform: translate3d(0, 0, 0) !important;
-                -webkit-transform: translate3d(0, 0, 0) !important;
-              `;
+              newBall.style.left = newRect.left + 'px';
+              newBall.style.top = newRect.top + 'px';
             }
           }, 10);
         } else {
@@ -678,7 +698,18 @@ async function animateFalling(moves) {
   for (const move of moves) {
     const ball = getBallElement(move.toRow, move.toCol);
     if (ball && ball.parentNode) {
-      ball.style.cssText = '';
+      if (isMobile) {
+        ball.style.position = '';
+        ball.style.left = '';
+        ball.style.top = '';
+        ball.style.width = '';
+        ball.style.height = '';
+        ball.style.zIndex = '';
+        ball.style.transition = '';
+        ball.style.margin = '';
+      } else {
+        ball.style.cssText = '';
+      }
     }
   }
 }

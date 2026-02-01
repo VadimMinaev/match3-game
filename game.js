@@ -8,6 +8,7 @@ let score = 0;
 let selectedBall = null;
 let isProcessing = false;
 let level = 1; // Текущий уровень
+let fireworksShown = false; // Флаг для отслеживания показа фейерверка
 
 // DOM элементы
 const gameBoardEl = document.getElementById('game-board');
@@ -416,14 +417,11 @@ async function processMatches(matches) {
 
   // Гравитация: шарики падают вниз
   console.log('Applying gravity'); // Отладочное сообщение
-  applyGravity();
+  await applyGravity();
 
   // Заполняем пустоты сверху новыми шарами
   console.log('Filling top rows'); // Отладочное сообщение
-  fillTopRows();
-
-  // Перерисовка
-  renderBoard();
+  await fillTopRows();
 
   // Проверяем новые совпадения
   const newMatches = findAllMatches();
@@ -435,11 +433,23 @@ async function processMatches(matches) {
 }
 
 // Применение гравитации (падение шариков вниз)
-function applyGravity() {
+async function applyGravity() {
+  const moves = []; // Массив перемещений для анимации
+  
   for (let col = 0; col < BOARD_SIZE; col++) {
     let writeIndex = BOARD_SIZE - 1;
     for (let row = BOARD_SIZE - 1; row >= 0; row--) {
       if (board[row][col] !== 0) {
+        if (writeIndex !== row) {
+          // Запоминаем перемещение для анимации
+          moves.push({
+            fromRow: row,
+            fromCol: col,
+            toRow: writeIndex,
+            toCol: col,
+            color: board[row][col]
+          });
+        }
         board[writeIndex][col] = board[row][col];
         if (writeIndex !== row) {
           board[row][col] = 0;
@@ -448,15 +458,117 @@ function applyGravity() {
       }
     }
   }
+  
+  // Анимируем падение шаров
+  if (moves.length > 0) {
+    await animateFalling(moves);
+  }
+}
+
+// Анимация падения шаров
+async function animateFalling(moves) {
+  if (moves.length === 0) return;
+  
+  // Обновляем DOM с новыми позициями
+  renderBoard();
+  
+  // Применяем анимацию падения к перемещенным шарам
+  for (const move of moves) {
+    const ball = getBallElement(move.toRow, move.toCol);
+    if (ball) {
+      // Вычисляем расстояние падения
+      const cellHeight = gameBoardEl.offsetHeight / BOARD_SIZE;
+      const fallDistance = (move.toRow - move.fromRow) * cellHeight;
+      
+      // Устанавливаем начальную позицию (выше)
+      ball.style.transform = `translateY(-${fallDistance}px)`;
+      ball.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    }
+  }
+  
+  // Запускаем анимацию для всех шаров одновременно
+  requestAnimationFrame(() => {
+    for (const move of moves) {
+      const ball = getBallElement(move.toRow, move.toCol);
+      if (ball) {
+        ball.style.transform = 'translateY(0)';
+      }
+    }
+  });
+  
+  // Ждем завершения анимации
+  await new Promise(resolve => setTimeout(resolve, 400));
+  
+  // Убираем inline стили
+  for (const move of moves) {
+    const ball = getBallElement(move.toRow, move.toCol);
+    if (ball) {
+      ball.style.transform = '';
+      ball.style.transition = '';
+    }
+  }
 }
 
 // Заполнение верхних строк новыми шарами
-function fillTopRows() {
+async function fillTopRows() {
+  const newBalls = []; // Массив новых шаров для анимации
+  
   for (let col = 0; col < BOARD_SIZE; col++) {
     for (let row = 0; row < BOARD_SIZE; row++) {
       if (board[row][col] === 0) {
         board[row][col] = getRandomColor();
+        newBalls.push({ row, col });
       }
+    }
+  }
+  
+  // Анимируем появление новых шаров
+  if (newBalls.length > 0) {
+    await animateSpawning(newBalls);
+  }
+}
+
+// Анимация появления новых шаров сверху
+async function animateSpawning(newBalls) {
+  if (newBalls.length === 0) return;
+  
+  // Обновляем DOM
+  renderBoard();
+  
+  // Применяем анимацию появления с небольшой задержкой для каскадного эффекта
+  for (let i = 0; i < newBalls.length; i++) {
+    const { row, col } = newBalls[i];
+    const ball = getBallElement(row, col);
+    if (ball) {
+      const cellHeight = gameBoardEl.offsetHeight / BOARD_SIZE;
+      const spawnDistance = (row + 1) * cellHeight;
+      
+      // Устанавливаем начальную позицию (выше видимой области)
+      ball.style.transform = `translateY(-${spawnDistance}px)`;
+      ball.style.opacity = '0';
+      ball.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease';
+      
+      // Небольшая задержка для каскадного эффекта (шары появляются по очереди)
+      await new Promise(resolve => setTimeout(resolve, 20));
+      
+      // Запускаем анимацию
+      requestAnimationFrame(() => {
+        ball.style.transform = 'translateY(0)';
+        ball.style.opacity = '1';
+      });
+    }
+  }
+  
+  // Ждем завершения анимации
+  await new Promise(resolve => setTimeout(resolve, 400));
+  
+  // Убираем inline стили
+  for (const { row, col } of newBalls) {
+    const ball = getBallElement(row, col);
+    if (ball) {
+      ball.style.transform = '';
+      ball.style.opacity = '';
+      ball.style.transition = '';
     }
   }
 }
@@ -464,6 +576,110 @@ function fillTopRows() {
 // Обновление счётчика
 function updateScore() {
   scoreEl.textContent = `${score} ₽`;
+  
+  // Проверяем достижение 10000 баллов
+  if (score >= 10000 && !fireworksShown) {
+    fireworksShown = true;
+    triggerFireworks();
+  }
+}
+
+// Функция для создания фейерверка
+function triggerFireworks() {
+  const gameContainer = document.querySelector('.game-container');
+  const colors = ['#ff4d4d', '#4da6ff', '#4dff4d', '#ffe066', '#d966ff', '#4dffff'];
+  
+  // Показываем победное сообщение
+  showVictoryMessage();
+  
+  // Создаем несколько залпов фейерверка
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const x = gameContainer.offsetWidth * 0.2 + Math.random() * gameContainer.offsetWidth * 0.6;
+      const y = gameContainer.offsetHeight * 0.2 + Math.random() * gameContainer.offsetHeight * 0.4;
+      createFireworkBurst(x, y, colors);
+    }, i * 400);
+  }
+  
+  // Продолжаем фейерверк еще немного
+  setTimeout(() => {
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        const x = gameContainer.offsetWidth * 0.2 + Math.random() * gameContainer.offsetWidth * 0.6;
+        const y = gameContainer.offsetHeight * 0.2 + Math.random() * gameContainer.offsetHeight * 0.4;
+        createFireworkBurst(x, y, colors);
+      }, i * 300);
+    }
+  }, 3000);
+}
+
+// Показ победного сообщения
+function showVictoryMessage() {
+  const message = document.createElement('div');
+  message.className = 'victory-message';
+  message.innerHTML = `
+    <h2>🎉 Поздравляем! 🎉</h2>
+    <p>Вы достигли 10,000 баллов!</p>
+  `;
+  document.body.appendChild(message);
+  
+  // Убираем сообщение через 5 секунд
+  setTimeout(() => {
+    message.style.animation = 'victoryPopIn 0.3s reverse forwards';
+    setTimeout(() => message.remove(), 300);
+  }, 5000);
+}
+
+// Создание одного залпа фейерверка
+function createFireworkBurst(x, y, colors) {
+  const gameContainer = document.querySelector('.game-container');
+  const containerRect = gameContainer.getBoundingClientRect();
+  const particleCount = 60;
+  
+  // Абсолютные координаты относительно viewport
+  const absoluteX = containerRect.left + x;
+  const absoluteY = containerRect.top + y;
+  
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'firework-particle';
+    
+    // Случайный цвет из палитры
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.backgroundColor = color;
+    particle.style.boxShadow = `0 0 10px ${color}, 0 0 20px ${color}`;
+    
+    // Случайный угол и скорость (равномерное распределение по кругу)
+    const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.3;
+    const velocity = 1.5 + Math.random() * 2.5;
+    const vx = Math.cos(angle) * velocity;
+    const vy = Math.sin(angle) * velocity;
+    
+    // Начальная позиция (fixed для правильного позиционирования)
+    particle.style.left = `${absoluteX}px`;
+    particle.style.top = `${absoluteY}px`;
+    
+    // Размер частицы
+    const size = 3 + Math.random() * 5;
+    particle.style.width = `${size}px`;
+    particle.style.height = `${size}px`;
+    
+    document.body.appendChild(particle);
+    
+    // Анимация частицы
+    requestAnimationFrame(() => {
+      particle.style.setProperty('--vx', vx);
+      particle.style.setProperty('--vy', vy);
+      particle.classList.add('firework-active');
+    });
+    
+    // Удаление частицы после анимации
+    setTimeout(() => {
+      if (particle.parentNode) {
+        particle.remove();
+      }
+    }, 2000);
+  }
 }
 
 // Запуск игры

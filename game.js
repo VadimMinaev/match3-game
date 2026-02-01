@@ -241,7 +241,7 @@ async function attemptSwap(r1, c1, r2, c2) {
   renderBoard();
 
   // Небольшая задержка для отображения обмена
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   // Проверка на совпадения
   const matches = findAllMatches();
@@ -405,7 +405,7 @@ async function processMatches(matches) {
   }
   
   // Ждём вибрацию
-  await new Promise(resolve => setTimeout(resolve, 300));
+  await new Promise(resolve => setTimeout(resolve, 100));
   
   // Затем сжигаем шарики огнем
   for (const { row, col } of matches) {
@@ -639,7 +639,7 @@ function updateScore() {
   scoreEl.textContent = `${score} ₽`;
   
   // Проверяем достижение 10000 баллов
-  if (score >= 10000 && !fireworksShown) {
+  if (score >= 1000 && !fireworksShown) {
     fireworksShown = true;
     triggerFireworks();
   }

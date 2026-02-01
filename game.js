@@ -461,7 +461,11 @@ async function applyGravity() {
   
   // Анимируем падение шаров
   if (moves.length > 0) {
-    await animateFalling(moves);
+    // Временно отключаем анимацию для отладки
+    renderBoard();
+    // await animateFalling(moves);
+  } else {
+    renderBoard();
   }
 }
 

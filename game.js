@@ -10,6 +10,10 @@ let isProcessing = false;
 let level = 1; // Текущий уровень
 let fireworksShown = false; // Флаг для отслеживания показа фейерверка
 
+// Определение мобильного устройства
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                 (window.innerWidth <= 768 && 'ontouchstart' in window);
+
 // DOM элементы
 const gameBoardEl = document.getElementById('game-board');
 const scoreEl = document.getElementById('score');
@@ -214,8 +218,12 @@ async function animateSwap(r1, c1, r2, c2) {
   
   if (!ball1 || !ball2) return;
   
-  // Небольшая задержка для мобильных устройств для правильного получения позиций
-  await new Promise(resolve => requestAnimationFrame(resolve));
+  // Для мобильных используем более длительную задержку
+  if (isMobile) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+  } else {
+    await new Promise(resolve => requestAnimationFrame(resolve));
+  }
   
   // Получаем позиции элементов
   const rect1 = ball1.getBoundingClientRect();
@@ -225,42 +233,71 @@ async function animateSwap(r1, c1, r2, c2) {
   const deltaX = (rect2.left - rect1.left);
   const deltaY = (rect2.top - rect1.top);
   
-  // Устанавливаем начальные стили для анимации с GPU ускорением
-  ball1.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-  ball2.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-  ball1.style.willChange = 'transform';
-  ball2.style.willChange = 'transform';
-  ball1.style.zIndex = '10';
-  ball2.style.zIndex = '10';
-  ball1.style.backfaceVisibility = 'hidden';
-  ball2.style.backfaceVisibility = 'hidden';
-  
-  // Принудительный reflow для мобильных
-  void ball1.offsetHeight;
-  void ball2.offsetHeight;
-  
-  // Запускаем анимацию обмена (используем translate3d для GPU ускорения)
-  requestAnimationFrame(() => {
+  // Для мобильных используем более простой и надежный подход
+  if (isMobile) {
+    // Устанавливаем стили с принудительным GPU ускорением
+    ball1.style.cssText = `
+      transition: transform 0.3s ease-out !important;
+      transform: translate3d(${deltaX}px, ${deltaY}px, 0) !important;
+      will-change: transform !important;
+      z-index: 10 !important;
+      -webkit-transform: translate3d(${deltaX}px, ${deltaY}px, 0) !important;
+      -webkit-transition: -webkit-transform 0.3s ease-out !important;
+    `;
+    ball2.style.cssText = `
+      transition: transform 0.3s ease-out !important;
+      transform: translate3d(${-deltaX}px, ${-deltaY}px, 0) !important;
+      will-change: transform !important;
+      z-index: 10 !important;
+      -webkit-transform: translate3d(${-deltaX}px, ${-deltaY}px, 0) !important;
+      -webkit-transition: -webkit-transform 0.3s ease-out !important;
+    `;
+    
+    // Принудительный reflow
+    void ball1.offsetHeight;
+    void ball2.offsetHeight;
+    
+    // Запускаем анимацию обратно
+    setTimeout(() => {
+      ball1.style.cssText = `
+        transition: transform 0.3s ease-out !important;
+        transform: translate3d(0, 0, 0) !important;
+        -webkit-transform: translate3d(0, 0, 0) !important;
+      `;
+      ball2.style.cssText = `
+        transition: transform 0.3s ease-out !important;
+        transform: translate3d(0, 0, 0) !important;
+        -webkit-transform: translate3d(0, 0, 0) !important;
+      `;
+    }, 10);
+  } else {
+    // Для десктопа используем стандартный подход
+    ball1.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    ball2.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    ball1.style.willChange = 'transform';
+    ball2.style.willChange = 'transform';
+    ball1.style.zIndex = '10';
+    ball2.style.zIndex = '10';
+    ball1.style.backfaceVisibility = 'hidden';
+    ball2.style.backfaceVisibility = 'hidden';
+    
+    void ball1.offsetHeight;
+    void ball2.offsetHeight;
+    
     requestAnimationFrame(() => {
-      ball1.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
-      ball2.style.transform = `translate3d(${-deltaX}px, ${-deltaY}px, 0)`;
+      requestAnimationFrame(() => {
+        ball1.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
+        ball2.style.transform = `translate3d(${-deltaX}px, ${-deltaY}px, 0)`;
+      });
     });
-  });
+  }
   
   // Ждем завершения анимации
   await new Promise(resolve => setTimeout(resolve, 300));
   
   // Убираем стили
-  ball1.style.transform = '';
-  ball1.style.transition = '';
-  ball1.style.willChange = '';
-  ball1.style.zIndex = '';
-  ball1.style.backfaceVisibility = '';
-  ball2.style.transform = '';
-  ball2.style.transition = '';
-  ball2.style.willChange = '';
-  ball2.style.zIndex = '';
-  ball2.style.backfaceVisibility = '';
+  ball1.style.cssText = '';
+  ball2.style.cssText = '';
 }
 
 // Проверка смежности
@@ -564,11 +601,15 @@ async function animateFalling(moves) {
   renderBoard();
   
   // Ждем отрисовки нового состояния
-  await new Promise(resolve => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(resolve);
+  if (isMobile) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+  } else {
+    await new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      });
     });
-  });
+  }
   
   // Применяем анимацию падения для каждого шара (как в animateSwap)
   for (const { move, element: oldBall, startX, startY } of ballAnimations) {
@@ -584,26 +625,46 @@ async function animateFalling(moves) {
         // Пропускаем если смещение слишком мало
         if (Math.abs(deltaY) < 1 && Math.abs(deltaX) < 1) continue;
         
-        // Устанавливаем начальные стили для анимации с GPU ускорением
-        newBall.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-        newBall.style.willChange = 'transform';
-        newBall.style.zIndex = '10';
-        newBall.style.backfaceVisibility = 'hidden';
-        
-        // Устанавливаем начальную позицию (старая позиция) - используем translate3d для GPU
-        newBall.style.transform = `translate3d(${-deltaX}px, ${-deltaY}px, 0)`;
-        
-        // Принудительный reflow для мобильных
-        void newBall.offsetHeight;
-        
-        // Запускаем анимацию перемещения к новой позиции
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
+        if (isMobile) {
+          // Для мобильных используем более простой и надежный подход
+          newBall.style.cssText = `
+            transition: transform 0.3s ease-out !important;
+            transform: translate3d(${-deltaX}px, ${-deltaY}px, 0) !important;
+            will-change: transform !important;
+            z-index: 10 !important;
+            -webkit-transform: translate3d(${-deltaX}px, ${-deltaY}px, 0) !important;
+            -webkit-transition: -webkit-transform 0.3s ease-out !important;
+          `;
+          
+          void newBall.offsetHeight;
+          
+          setTimeout(() => {
             if (newBall.parentNode) {
-              newBall.style.transform = 'translate3d(0, 0, 0)';
+              newBall.style.cssText = `
+                transition: transform 0.3s ease-out !important;
+                transform: translate3d(0, 0, 0) !important;
+                -webkit-transform: translate3d(0, 0, 0) !important;
+              `;
             }
+          }, 10);
+        } else {
+          // Для десктопа используем стандартный подход
+          newBall.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+          newBall.style.willChange = 'transform';
+          newBall.style.zIndex = '10';
+          newBall.style.backfaceVisibility = 'hidden';
+          newBall.style.transform = `translate3d(${-deltaX}px, ${-deltaY}px, 0)`;
+          
+          void newBall.offsetHeight;
+          
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (newBall.parentNode) {
+                newBall.style.transform = 'translate3d(0, 0, 0)';
+              }
+            });
           });
-        });
+        }
       } catch (e) {
         console.error('Error animating ball:', e);
       }
@@ -617,11 +678,7 @@ async function animateFalling(moves) {
   for (const move of moves) {
     const ball = getBallElement(move.toRow, move.toCol);
     if (ball && ball.parentNode) {
-      ball.style.transform = '';
-      ball.style.transition = '';
-      ball.style.willChange = '';
-      ball.style.zIndex = '';
-      ball.style.backfaceVisibility = '';
+      ball.style.cssText = '';
     }
   }
 }

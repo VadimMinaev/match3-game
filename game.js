@@ -527,7 +527,7 @@ async function animateFalling(moves) {
         if (fallDistance > 1) {
           // Устанавливаем начальную позицию (выше) через transform
           newBall.style.transform = `translateY(${-fallDistance}px)`;
-          newBall.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          newBall.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
           newBall.style.willChange = 'transform';
           newBall.style.zIndex = '10';
           
@@ -549,7 +549,7 @@ async function animateFalling(moves) {
   });
   
   // Ждем завершения анимации
-  await new Promise(resolve => setTimeout(resolve, 600));
+  await new Promise(resolve => setTimeout(resolve, 300));
   
   // Убираем inline стили
   for (const move of moves) {

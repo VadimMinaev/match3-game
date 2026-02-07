@@ -759,6 +759,7 @@ async function animateSpawning(newBalls) {
       ball.style.transform = `translateY(-${spawnDistance}px)`;
       ball.style.opacity = '0';
       ball.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease';
+      void ball.offsetHeight; // reflow, чтобы начальное состояние отрисовалось
       
       // Небольшая задержка для каскадного эффекта (шары появляются по очереди)
       await new Promise(resolve => setTimeout(resolve, 20));
@@ -771,8 +772,9 @@ async function animateSpawning(newBalls) {
     }
   }
   
-  // Ждем завершения анимации
-  await new Promise(resolve => setTimeout(resolve, 200));
+  // Ждем завершения анимации (0.4s переход + задержки каскада)
+  const spawnDuration = 400 + newBalls.length * 20;
+  await new Promise(resolve => setTimeout(resolve, spawnDuration));
   
   // Убираем inline стили
   for (const { row, col } of newBalls) {

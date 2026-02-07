@@ -158,7 +158,7 @@ h1 {
 
 @keyframes fallDown {
   from {
-    transform: translateY(0);
+    transform: translateY(-100%);
   }
   to {
     transform: translateY(0);

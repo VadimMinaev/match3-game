@@ -1,33 +1,37 @@
 # Как выкатывать обновление на сервер
 
-## Команды (подставь свой USER и SERVER)
+Перед деплоем: в `index.html` увеличь `?v=1` → `?v=2`, проверь игру локально. Выполняй из корня проекта (match3-game).
 
-Перед этим: в `index.html` увеличь `?v=1` → `?v=2` и проверь игру локально.
-
-```bash
-# 1. Бэкап на сервере (только если папка уже есть; при первом деплое пропусти)
-ssh root@77.239.123.15 "[ -d /root/apps/balls ] && cp -r /root/apps/balls /root/apps/balls.bak.$(date +%Y%m%d-%H%M)"
-
-# 2. Создать папку на сервере, если её ещё нет (при первом деплое)
-ssh USER@SERVER "mkdir -p /root/apps/balls"
-
-# 3. Залить файлы (из корня проекта match3-game)
-rsync -avz --delete ./ USER@SERVER:/root/apps/balls/ --exclude=.git --exclude=debug.log --exclude=*.bak*
-```
-
-Вариант через scp (если нет rsync; папка должна существовать — создай её шагом 2):
+## Деплой
 
 ```bash
-scp index.html style.css game.js pop.mp3 fail.mp3 USER@SERVER:/root/apps/balls/
+# Куда подключаемся (подставь свой хост, если не этот)
+H=root@77.239.123.15
+
+# 1. Бэкап (при первом деплое можно пропустить)
+ssh $H "[ -d /root/apps/balls ] && cp -r /root/apps/balls /root/apps/balls.bak.$(date +%Y%m%d-%H%M)"
+
+# 2. Папка на сервере (если ещё нет)
+ssh $H "mkdir -p /root/apps/balls"
+
+# 3. Залить файлы
+rsync -avz --delete ./ $H:/root/apps/balls/ --exclude=.git --exclude=debug.log --exclude=*.bak*
 ```
 
-Откат (подставь дату бэкапа вместо YYYYMMDD-HHMM):
+Через scp (если нет rsync):
 
 ```bash
-ssh USER@SERVER "cp -r /root/apps/balls.bak.YYYYMMDD-HHMM /root/apps/balls"
+H=root@77.239.123.15
+scp index.html style.css game.js pop.mp3 fail.mp3 $H:/root/apps/balls/
 ```
 
----
+## Откат
+
+```bash
+H=root@77.239.123.15
+# Подставь дату бэкапа, например 20250207-1217
+ssh $H "cp -r /root/apps/balls.bak.YYYYMMDD-HHMM /root/apps/balls"
+```
 
 ---
 

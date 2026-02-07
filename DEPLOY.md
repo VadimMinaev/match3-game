@@ -6,7 +6,7 @@
 
 ```bash
 # 1. Бэкап на сервере (только если папка уже есть; при первом деплое пропусти)
-ssh USER@SERVER "[ -d /root/apps/balls ] && cp -r /root/apps/balls /root/apps/balls.bak.$(date +%Y%m%d-%H%M)"
+ssh root@77.239.123.15 "[ -d /root/apps/balls ] && cp -r /root/apps/balls /root/apps/balls.bak.$(date +%Y%m%d-%H%M)"
 
 # 2. Создать папку на сервере, если её ещё нет (при первом деплое)
 ssh USER@SERVER "mkdir -p /root/apps/balls"

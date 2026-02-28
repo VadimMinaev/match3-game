@@ -8,7 +8,6 @@ let score = 0;
 let selectedBall = null;
 let isProcessing = false;
 let level = 1; // Текущий уровень
-let fireworksShown = false; // Флаг для отслеживания показа фейерверка
 
 // Определение мобильного устройства
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
@@ -215,109 +214,45 @@ function getBallElement(row, col) {
 async function animateSwap(r1, c1, r2, c2) {
   const ball1 = getBallElement(r1, c1);
   const ball2 = getBallElement(r2, c2);
-  
+
   if (!ball1 || !ball2) return;
-  
-  // Для мобильных используем более длительную задержку
-  if (isMobile) {
-    await new Promise(resolve => setTimeout(resolve, 50));
-  } else {
-    await new Promise(resolve => requestAnimationFrame(resolve));
-  }
-  
-  // Получаем позиции элементов
+
+  // Получаем позиции ДО любых изменений
   const rect1 = ball1.getBoundingClientRect();
   const rect2 = ball2.getBoundingClientRect();
-  
-  // Вычисляем смещения
-  const deltaX = (rect2.left - rect1.left);
-  const deltaY = (rect2.top - rect1.top);
-  
-  // Для мобильных используем абсолютное позиционирование для надежности
-  if (isMobile) {
-    // Сохраняем размеры
-    const width1 = rect1.width;
-    const height1 = rect1.height;
-    const width2 = rect2.width;
-    const height2 = rect2.height;
-    
-    // Переводим в абсолютное позиционирование
-    ball1.style.position = 'absolute';
-    ball1.style.left = rect1.left + 'px';
-    ball1.style.top = rect1.top + 'px';
-    ball1.style.width = width1 + 'px';
-    ball1.style.height = height1 + 'px';
-    ball1.style.zIndex = '100';
-    ball1.style.transition = 'left 0.3s ease-out, top 0.3s ease-out';
-    ball1.style.margin = '0';
-    
-    ball2.style.position = 'absolute';
-    ball2.style.left = rect2.left + 'px';
-    ball2.style.top = rect2.top + 'px';
-    ball2.style.width = width2 + 'px';
-    ball2.style.height = height2 + 'px';
-    ball2.style.zIndex = '100';
-    ball2.style.transition = 'left 0.3s ease-out, top 0.3s ease-out';
-    ball2.style.margin = '0';
-    
-    // Принудительный reflow
-    void ball1.offsetHeight;
-    void ball2.offsetHeight;
-    
-    // Запускаем анимацию перемещения
-    setTimeout(() => {
-      ball1.style.left = rect2.left + 'px';
-      ball1.style.top = rect2.top + 'px';
-      ball2.style.left = rect1.left + 'px';
-      ball2.style.top = rect1.top + 'px';
-    }, 10);
-  } else {
-    // Для десктопа используем стандартный подход
-    ball1.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-    ball2.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-    ball1.style.willChange = 'transform';
-    ball2.style.willChange = 'transform';
-    ball1.style.zIndex = '10';
-    ball2.style.zIndex = '10';
-    ball1.style.backfaceVisibility = 'hidden';
-    ball2.style.backfaceVisibility = 'hidden';
-    
-    void ball1.offsetHeight;
-    void ball2.offsetHeight;
-    
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        ball1.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
-        ball2.style.transform = `translate3d(${-deltaX}px, ${-deltaY}px, 0)`;
-      });
-    });
-  }
-  
+  const deltaX = rect2.left - rect1.left;
+  const deltaY = rect2.top - rect1.top;
+
+  // Настраиваем анимацию для обоих шаров
+  ball1.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+  ball2.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+  ball1.style.willChange = 'transform';
+  ball2.style.willChange = 'transform';
+  ball1.style.zIndex = '100';
+  ball2.style.zIndex = '100';
+
+  // Принудительный reflow
+  void ball1.offsetHeight;
+  void ball2.offsetHeight;
+
+  // Запускаем анимацию
+  requestAnimationFrame(() => {
+    ball1.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
+    ball2.style.transform = `translate3d(${-deltaX}px, ${-deltaY}px, 0)`;
+  });
+
   // Ждем завершения анимации
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  // Убираем стили
-  if (isMobile) {
-    ball1.style.position = '';
-    ball1.style.left = '';
-    ball1.style.top = '';
-    ball1.style.width = '';
-    ball1.style.height = '';
-    ball1.style.zIndex = '';
-    ball1.style.transition = '';
-    ball1.style.margin = '';
-    ball2.style.position = '';
-    ball2.style.left = '';
-    ball2.style.top = '';
-    ball2.style.width = '';
-    ball2.style.height = '';
-    ball2.style.zIndex = '';
-    ball2.style.transition = '';
-    ball2.style.margin = '';
-  } else {
-    ball1.style.cssText = '';
-    ball2.style.cssText = '';
-  }
+  await new Promise(resolve => setTimeout(resolve, 250));
+
+  // Очищаем стили
+  ball1.style.transition = '';
+  ball1.style.transform = '';
+  ball1.style.willChange = '';
+  ball1.style.zIndex = '';
+  ball2.style.transition = '';
+  ball2.style.transform = '';
+  ball2.style.willChange = '';
+  ball2.style.zIndex = '';
 }
 
 // Проверка смежности
@@ -559,16 +494,15 @@ async function processMatches(matches) {
   }
 }
 
-// Применение гравитации (падение шариков вниз)
+// Применение гравитации (падение шариков вниз) с анимацией
 async function applyGravity() {
   const moves = []; // Массив перемещений для анимации
-  
+
   for (let col = 0; col < BOARD_SIZE; col++) {
     let writeIndex = BOARD_SIZE - 1;
     for (let row = BOARD_SIZE - 1; row >= 0; row--) {
       if (board[row][col] !== 0) {
         if (writeIndex !== row) {
-          // Запоминаем перемещение для анимации
           moves.push({
             fromRow: row,
             fromCol: col,
@@ -585,133 +519,78 @@ async function applyGravity() {
       }
     }
   }
-  
-  // Анимируем падение шаров
-  if (moves.length > 0) {
-    await animateFalling(moves);
-  } else {
-    renderBoard();
-  }
-}
 
-// Анимация падения шаров
-async function animateFalling(moves) {
-  if (moves.length === 0) return;
-  
-  // Сохраняем старые элементы и их позиции ДО обновления DOM (как в animateSwap)
-  const ballAnimations = [];
+  if (moves.length === 0) {
+    renderBoard();
+    return;
+  }
+
+  // Сохраняем ссылки на элементы ДО рендера
+  const ballElements = [];
   for (const move of moves) {
-    const oldBall = getBallElement(move.fromRow, move.fromCol);
-    if (oldBall) {
-      try {
-        const rect = oldBall.getBoundingClientRect();
-        ballAnimations.push({
-          move: move,
-          element: oldBall,
-          startX: rect.left,
-          startY: rect.top
-        });
-      } catch (e) {
-        console.error('Error getting old position:', e);
-      }
+    const ball = getBallElement(move.fromRow, move.fromCol);
+    if (ball) {
+      ballElements.push({ move, ball });
     }
   }
-  
-  // Обновляем DOM с новыми позициями
+
+  // Обновляем DOM
   renderBoard();
-  
-  // Ждем отрисовки нового состояния
-  if (isMobile) {
-    await new Promise(resolve => setTimeout(resolve, 50));
-  } else {
-    await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(resolve);
+
+  // Ждем отрисовки
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+  // Анимация падения
+  const animDuration = 400; // 400ms для плавного падения
+  const startTime = performance.now();
+
+  // Получаем конечные позиции
+  const positions = [];
+  for (const { move, ball } of ballElements) {
+    const targetBall = getBallElement(move.toRow, move.toCol);
+    if (targetBall) {
+      const startRect = ball.getBoundingClientRect();
+      const endRect = targetBall.getBoundingClientRect();
+      positions.push({
+        ball: targetBall,
+        startX: startRect.left,
+        startY: startRect.top,
+        endX: endRect.left,
+        endY: endRect.top,
+        deltaX: endRect.left - startRect.left,
+        deltaY: endRect.top - startRect.top
       });
-    });
-  }
-  
-  // Применяем анимацию падения для каждого шара (как в animateSwap)
-  for (const { move, element: oldBall, startX, startY } of ballAnimations) {
-    const newBall = getBallElement(move.toRow, move.toCol);
-    if (newBall) {
-      try {
-        const newRect = newBall.getBoundingClientRect();
-        
-        // Вычисляем смещение (как в animateSwap)
-        const deltaX = newRect.left - startX;
-        const deltaY = newRect.top - startY;
-        
-        // Пропускаем если смещение слишком мало
-        if (Math.abs(deltaY) < 1 && Math.abs(deltaX) < 1) continue;
-        
-        if (isMobile) {
-          // Для мобильных используем абсолютное позиционирование
-          const width = newRect.width;
-          const height = newRect.height;
-          
-          newBall.style.position = 'absolute';
-          newBall.style.left = startX + 'px';
-          newBall.style.top = startY + 'px';
-          newBall.style.width = width + 'px';
-          newBall.style.height = height + 'px';
-          newBall.style.zIndex = '100';
-          newBall.style.transition = 'left 0.3s ease-out, top 0.3s ease-out';
-          newBall.style.margin = '0';
-          
-          void newBall.offsetHeight;
-          
-          setTimeout(() => {
-            if (newBall.parentNode) {
-              newBall.style.left = newRect.left + 'px';
-              newBall.style.top = newRect.top + 'px';
-            }
-          }, 10);
-        } else {
-          // Для десктопа используем стандартный подход
-          newBall.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-          newBall.style.willChange = 'transform';
-          newBall.style.zIndex = '10';
-          newBall.style.backfaceVisibility = 'hidden';
-          newBall.style.transform = `translate3d(${-deltaX}px, ${-deltaY}px, 0)`;
-          
-          void newBall.offsetHeight;
-          
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              if (newBall.parentNode) {
-                newBall.style.transform = 'translate3d(0, 0, 0)';
-              }
-            });
-          });
-        }
-      } catch (e) {
-        console.error('Error animating ball:', e);
-      }
     }
   }
-  
-  // Ждем завершения анимации
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  // Убираем inline стили
-  for (const move of moves) {
-    const ball = getBallElement(move.toRow, move.toCol);
-    if (ball && ball.parentNode) {
-      if (isMobile) {
-        ball.style.position = '';
-        ball.style.left = '';
-        ball.style.top = '';
-        ball.style.width = '';
-        ball.style.height = '';
-        ball.style.zIndex = '';
-        ball.style.transition = '';
-        ball.style.margin = '';
+
+  // Анимация через requestAnimationFrame для плавности
+  return new Promise(resolve => {
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / animDuration, 1);
+      // Easing function (easeOutCubic)
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      for (const pos of positions) {
+        const x = pos.deltaX * eased;
+        const y = pos.deltaY * eased;
+        pos.ball.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        pos.ball.style.transition = 'none';
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
       } else {
-        ball.style.cssText = '';
+        // Завершение анимации
+        for (const pos of positions) {
+          pos.ball.style.transform = '';
+          pos.ball.style.transition = '';
+        }
+        resolve();
       }
     }
-  }
+    requestAnimationFrame(animate);
+  });
 }
 
 // Заполнение верхних строк новыми шарами
@@ -736,64 +615,84 @@ async function fillTopRows() {
 // Анимация появления новых шаров сверху
 async function animateSpawning(newBalls) {
   if (newBalls.length === 0) return;
-  
+
   // Обновляем DOM
   renderBoard();
-  
+
   // Ждем отрисовки
-  await new Promise(resolve => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(resolve);
-    });
-  });
-  
-  // Применяем анимацию появления с небольшой задержкой для каскадного эффекта
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+  const animDuration = 500; // 500ms для плавного падения
+  const cellHeight = gameBoardEl.offsetHeight / BOARD_SIZE;
+  const startTime = performance.now();
+
+  // Подготавливаем данные для анимации
+  const spawnData = [];
   for (let i = 0; i < newBalls.length; i++) {
     const { row, col } = newBalls[i];
     const ball = getBallElement(row, col);
     if (ball) {
-      const cellHeight = gameBoardEl.offsetHeight / BOARD_SIZE;
+      // Вычисляем расстояние падения (сверху до позиции)
       const spawnDistance = (row + 1) * cellHeight;
-      
-      // Устанавливаем начальную позицию (выше видимой области)
-      ball.style.transform = `translateY(-${spawnDistance}px)`;
-      ball.style.opacity = '0';
-      ball.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease';
-      void ball.offsetHeight; // reflow, чтобы начальное состояние отрисовалось
-      
-      // Небольшая задержка для каскадного эффекта (шары появляются по очереди)
-      await new Promise(resolve => setTimeout(resolve, 20));
-      
-      // Запускаем анимацию
-      requestAnimationFrame(() => {
-        ball.style.transform = 'translateY(0)';
-        ball.style.opacity = '1';
+      spawnData.push({
+        ball,
+        startY: -spawnDistance,
+        delay: i * 30 // Каскадная задержка 30ms между шарами
       });
     }
   }
-  
-  // Ждем завершения анимации (0.4s переход + задержки каскада)
-  const spawnDuration = 400 + newBalls.length * 20;
-  await new Promise(resolve => setTimeout(resolve, spawnDuration));
-  
-  // Убираем inline стили
-  for (const { row, col } of newBalls) {
-    const ball = getBallElement(row, col);
-    if (ball) {
-      ball.style.transform = '';
-      ball.style.opacity = '';
-      ball.style.transition = '';
+
+  // Анимация через requestAnimationFrame
+  return new Promise(resolve => {
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      let allDone = true;
+
+      for (const data of spawnData) {
+        const ballElapsed = Math.max(0, elapsed - data.delay);
+        const progress = Math.min(ballElapsed / animDuration, 1);
+
+        if (progress < 1) {
+          allDone = false;
+        }
+
+        // Easing function (easeOutQuart)
+        const eased = 1 - Math.pow(1 - progress, 4);
+
+        const currentY = data.startY * (1 - eased);
+        const opacity = eased;
+
+        data.ball.style.transform = `translateY(${currentY}px)`;
+        data.ball.style.opacity = opacity;
+        data.ball.style.transition = 'none';
+      }
+
+      if (!allDone) {
+        requestAnimationFrame(animate);
+      } else {
+        // Завершение анимации
+        for (const data of spawnData) {
+          data.ball.style.transform = '';
+          data.ball.style.opacity = '';
+          data.ball.style.transition = '';
+        }
+        resolve();
+      }
     }
-  }
+    requestAnimationFrame(animate);
+  });
 }
 
 // Обновление счётчика
+let lastFireworksScore = 0; // Последнее значение очков, когда был салют
+
 function updateScore() {
   scoreEl.textContent = `${score} ₽`;
-  
-  // Проверяем достижение 10000 баллов
-  if (score >= 10000 && !fireworksShown) {
-    fireworksShown = true;
+
+  // Проверяем достижение кратных 5000 баллов для салюта
+  const nextFireworksThreshold = Math.floor(score / 5000) * 5000;
+  if (score > 0 && nextFireworksThreshold > lastFireworksScore) {
+    lastFireworksScore = nextFireworksThreshold;
     triggerFireworks();
   }
 }
@@ -802,10 +701,7 @@ function updateScore() {
 function triggerFireworks() {
   const gameContainer = document.querySelector('.game-container');
   const colors = ['#ff4d4d', '#4da6ff', '#4dff4d', '#ffe066', '#d966ff', '#4dffff'];
-  
-  // Показываем победное сообщение
-  showVictoryMessage();
-  
+
   // Создаем несколько залпов фейерверка
   for (let i = 0; i < 8; i++) {
     setTimeout(() => {
@@ -814,7 +710,7 @@ function triggerFireworks() {
       createFireworkBurst(x, y, colors);
     }, i * 400);
   }
-  
+
   // Продолжаем фейерверк еще немного
   setTimeout(() => {
     for (let i = 0; i < 5; i++) {
@@ -825,23 +721,6 @@ function triggerFireworks() {
       }, i * 300);
     }
   }, 3000);
-}
-
-// Показ победного сообщения
-function showVictoryMessage() {
-  const message = document.createElement('div');
-  message.className = 'victory-message';
-  message.innerHTML = `
-    <h2>🎉 Поздравляем! 🎉</h2>
-    <p>Вы достигли 10,000 баллов!</p>
-  `;
-  document.body.appendChild(message);
-  
-  // Убираем сообщение через 5 секунд
-  setTimeout(() => {
-    message.style.animation = 'victoryPopIn 0.3s reverse forwards';
-    setTimeout(() => message.remove(), 300);
-  }, 5000);
 }
 
 // Создание одного залпа фейерверка

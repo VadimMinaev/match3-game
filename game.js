@@ -3,6 +3,9 @@ const BOARD_SIZE = 8;
 const COLORS_COUNT = 6;
 const MATCH_LENGTH = 3;
 
+// Кэш для DOM элементов
+const ballCache = new Map();
+
 // === Игровое состояние ===
 let board = [];
 let score = 0;
@@ -72,6 +75,32 @@ function initGame() {
   updateUI();
   setupEventListeners();
   checkAchievements();
+  setupTouchPrevention();
+}
+
+// === Предотвращение зума ===
+function setupTouchPrevention() {
+  // Предотвращаем зум двойным тапом
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  // Предотвращаем зум жестом
+  document.addEventListener('touchmove', (e) => {
+    if (e.scale !== 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // Предотвращаем контекстное меню на длинный тап
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+  });
 }
 
 // === Сохранение и загрузка ===
@@ -167,7 +196,7 @@ function renderBoard() {
       const ball = document.createElement('div');
       ball.className = 'ball';
       const value = board[row][col];
-      
+
       if (value !== 0) {
         if (value > 100) {
           ball.dataset.bonus = value;
@@ -177,12 +206,19 @@ function renderBoard() {
         ball.dataset.row = row;
         ball.dataset.col = col;
         ball.addEventListener('click', handleBallClick);
-        ball.addEventListener('touchstart', handleTouchStart, { passive: true });
-        ball.addEventListener('touchend', handleTouchEnd, { passive: true });
+        ball.addEventListener('touchstart', handleTouchStart, { passive: false });
+        ball.addEventListener('touchend', handleTouchEnd, { passive: false });
+        ball.addEventListener('touchmove', handleTouchMove, { passive: false });
       }
       gameBoardEl.appendChild(ball);
     }
   }
+}
+
+function handleTouchMove(event) {
+  // Предотвращаем скролл при касании игрового поля
+  if (isProcessing || isPaused) return;
+  event.preventDefault();
 }
 
 function setupEventListeners() {
@@ -263,6 +299,15 @@ function setupEventListeners() {
       if (e.key === 'r') restartGame();
     }
   });
+
+  // Обработка изменения размера окна
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      renderBoard();
+    }, 200);
+  });
 }
 
 // === Управление ===
@@ -276,12 +321,16 @@ function handleBallClick(event) {
 
 let touchStartPos = null;
 let touchTarget = null;
+let touchTimeout = null;
 
 function handleTouchStart(event) {
   if (isProcessing || isPaused) return;
   const touch = event.touches[0];
   touchStartPos = { x: touch.clientX, y: touch.clientY };
   touchTarget = event.currentTarget;
+  
+  // Предотвращаем стандартное поведение (скролл и т.д.)
+  event.preventDefault();
 }
 
 function handleTouchEnd(event) {
@@ -300,7 +349,8 @@ function handleTouchEnd(event) {
 
   // Это свайп — предотвращаем клик и меняем шары
   event.preventDefault();
-  
+  event.stopPropagation();
+
   if (!touchTarget) return;
   const row = parseInt(touchTarget.dataset.row);
   const col = parseInt(touchTarget.dataset.col);
@@ -941,9 +991,10 @@ async function animateSpawning(newBalls) {
         if (progress < 1) allDone = false;
 
         const eased = 1 - Math.pow(1 - progress, 4);
-        data.ball.style.transform = `translateY(${data.startY * (1 - eased)}px)`;
+        data.ball.style.transform = `translate3d(0, ${data.startY * (1 - eased)}px, 0)`;
         data.ball.style.opacity = eased;
         data.ball.style.transition = 'none';
+        data.ball.style.willChange = 'transform, opacity';
       }
 
       if (!allDone) {

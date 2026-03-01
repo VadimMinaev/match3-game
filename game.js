@@ -1,6 +1,6 @@
 // === Конфигурация ===
 const BOARD_COLS = 8;
-const BOARD_ROWS = 15;
+const BOARD_ROWS = 8;
 const COLORS_COUNT = 6;
 const MATCH_LENGTH = 3;
 
@@ -1133,10 +1133,8 @@ function restartGame() {
 }
 
 function checkLevelUp() {
-  const thresholds = { easy: 500, normal: 1000, hard: 1500 };
-  const threshold = thresholds[gameState.difficulty] || 1000;
-  
-  if (score > 0 && score % threshold === 0) {
+  // Салют каждые 5000 очков
+  if (score > 0 && score >= 5000 && score % 5000 === 0) {
     triggerFireworks();
   }
 }

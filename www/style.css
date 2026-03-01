@@ -744,6 +744,16 @@ body {
     padding: 8px 16px;
     font-size: 13px;
   }
+
+  /* On mobile, avoid large vertical centering — push container toward top */
+  body {
+    align-items: flex-start;
+    padding-top: 12px;
+  }
+
+  .game-container {
+    margin-top: 6px; /* small gap from top */
+  }
 }
 
 @media (max-width: 480px) {

@@ -19,6 +19,7 @@ cp -r /root/apps/balls /root/apps/balls.bak.$(date +%Y%m%d-%H%M)
 
 ### 4. Обнови код из GitHub
 ```bash
+cd /root/apps/balls
 git pull origin main
 ```
 

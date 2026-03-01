@@ -522,6 +522,42 @@ function findAllMatches() {
     }
   }
 
+  // Г-образные совпадения (крест-паттерны)
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      const color = board[row][col];
+      if (color === 0 || color > 100) continue;
+
+      // Подсчитаем горизонтальную линию
+      let hLeft = 0, hRight = 0;
+      for (let c = col - 1; c >= 0 && board[row][c] === color; c--) hLeft++;
+      for (let c = col + 1; c < BOARD_SIZE && board[row][c] === color; c++) hRight++;
+      const hTotal = hLeft + hRight + 1; // +1 за центральный шар
+
+      // Подсчитаем вертикальную линию
+      let vUp = 0, vDown = 0;
+      for (let r = row - 1; r >= 0 && board[r][col] === color; r--) vUp++;
+      for (let r = row + 1; r < BOARD_SIZE && board[r][col] === color; r++) vDown++;
+      const vTotal = vUp + vDown + 1; // +1 за центральный шар
+
+      // Если есть хотя бы 3 в одном направлении И хотя бы 3 в другом - это Г совпадение
+      if ((hTotal >= 3 && vTotal >= 3) || (hTotal >= 4 && vTotal >= 2) || (hTotal >= 2 && vTotal >= 4)) {
+        // Добавим центральный шар
+        matches.add(`${row},${col}`);
+        
+        // Добавим горизонтальную линию
+        for (let c = col - hLeft; c <= col + hRight; c++) {
+          matches.add(`${row},${c}`);
+        }
+        
+        // Добавим вертикальную линию
+        for (let r = row - vUp; r <= row + vDown; r++) {
+          matches.add(`${r},${col}`);
+        }
+      }
+    }
+  }
+
   return Array.from(matches).map(pos => {
     const [r, c] = pos.split(',').map(Number);
     return { row: r, col: c };

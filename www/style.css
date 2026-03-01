@@ -7,6 +7,7 @@
 :root {
   --board-size: min(90vw, 512px);
   --gap-size: 4px;
+  --cell-size: 56px; /* fixed cell size to preserve density and circular shape */
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --bg-dark: #0f0f1a;
   --bg-card: rgba(255, 255, 255, 0.08);
@@ -16,17 +17,11 @@
 }
 
 @media (max-width: 768px) {
-  :root {
-    --gap-size: 2px;
-    --board-size: min(95vw, 360px);
-  }
+  /* Keep gap-size and cell-size constant to preserve density on mobile */
 }
 
 @media (max-width: 480px) {
-  :root {
-    --gap-size: 1px;
-    --board-size: 92vw;
-  }
+  /* Keep gap-size and cell-size constant to preserve density on small phones */
 }
 
 html, body {
@@ -70,14 +65,15 @@ body {
     inset 0 0 15px rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
   width: 100%;
-  height: 100%;
+  height: auto; /* allow container to size to content on small screens */
   max-width: var(--board-size);
-  max-height: 100vh;
+  max-height: none;
   position: relative;
-  overflow: hidden;
-  margin: 0;
+  overflow: visible;
+  margin: 0 auto 12px;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   z-index: 1;
 }
 
@@ -229,23 +225,22 @@ body {
 /* Game Board */
 .game-board {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
+  grid-template-columns: repeat(8, var(--cell-size));
+  grid-template-rows: repeat(8, var(--cell-size));
   gap: var(--gap-size);
   background: var(--bg-dark);
   padding: var(--gap-size);
   border-radius: 10px;
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  max-width: 100%;
+  /* Calculate exact board size from cell size and gaps to avoid responsive scaling */
+  width: calc(var(--cell-size) * 8 + var(--gap-size) * 9);
+  height: calc(var(--cell-size) * 8 + var(--gap-size) * 9);
   margin: 0 auto 6px;
   position: relative;
   overflow: hidden;
   box-shadow:
     inset 0 0 20px rgba(0, 0, 0, 0.8),
     0 0 15px rgba(100, 100, 255, 0.2);
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
 }
 
 .game-board::before {

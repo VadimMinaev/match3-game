@@ -608,12 +608,28 @@ async function processMatches(matches) {
   playSound('pop');
   if (combo > 1) showComboText(combo);
 
-  await new Promise(resolve => setTimeout(resolve, 200));
+  // Немного подождём, затем плавно анимируем исчезновение шаров,
+  // чтобы на мобильных устройствах шары не исчезали мгновенно.
+  await new Promise(resolve => setTimeout(resolve, 120));
 
-  // Удаляем шарики
+  for (const { row, col } of matches) {
+    const el = getBallElement(row, col);
+    if (el) {
+      el.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+      el.style.transform = 'scale(0.3)';
+      el.style.opacity = '0';
+    }
+  }
+
+  // Подождём завершения анимации, затем обновим логическое состояние доски
+  await new Promise(resolve => setTimeout(resolve, 260));
+
   for (const { row, col } of matches) {
     board[row][col] = 0;
   }
+  // Перерисуем доску после удаления, чтобы последующие операции (гравитация, бонусы)
+  // работали с актуальным состоянием и игрок видел плавный переход.
+  renderBoard();
 
   // Создаём бонусы на месте совпадений 4+
   const bonusesToCreate = new Map(); // Запоминаем позиции для бонусов

@@ -192,8 +192,41 @@ function setupEventListeners() {
   if (restartBtn) {
     restartBtn.addEventListener('click', restartGame);
   }
+  
+  // Обработчики модальки с правилами
+  const rulesBtn = document.getElementById('rules-btn');
+  const rulesModal = document.getElementById('rules-modal');
+  const closeRulesBtn = document.getElementById('close-rules');
+  
+  if (rulesBtn) {
+    rulesBtn.addEventListener('click', () => {
+      if (rulesModal) rulesModal.style.display = 'flex';
+    });
+  }
+  
+  if (closeRulesBtn) {
+    closeRulesBtn.addEventListener('click', () => {
+      if (rulesModal) rulesModal.style.display = 'none';
+    });
+  }
+  
+  if (rulesModal) {
+    rulesModal.addEventListener('click', (e) => {
+      if (e.target === rulesModal) {
+        rulesModal.style.display = 'none';
+      }
+    });
+  }
+  
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' || e.key === 'p') togglePause();
+    if (e.key === 'Escape') {
+      if (rulesModal && rulesModal.style.display === 'flex') {
+        rulesModal.style.display = 'none';
+      } else {
+        togglePause();
+      }
+    }
+    if (e.key === 'p') togglePause();
     if (e.key === 'r') restartGame();
   });
 }
@@ -367,6 +400,7 @@ function getPenalty() {
 function findAllMatches() {
   const matches = new Set();
 
+  // Горизонтальные совпадения
   for (let row = 0; row < BOARD_SIZE; row++) {
     let count = 1;
     let color = board[row][0];
@@ -378,10 +412,6 @@ function findAllMatches() {
           for (let i = col - count; i < col; i++) {
             matches.add(`${row},${i}`);
           }
-          // Создаём бонус за 4+ совпадения
-          if (count >= 4) {
-            createBonus(row, col - Math.floor(count/2), count);
-          }
         }
         if (col < BOARD_SIZE) {
           color = board[row][col];
@@ -391,6 +421,7 @@ function findAllMatches() {
     }
   }
 
+  // Вертикальные совпадения
   for (let col = 0; col < BOARD_SIZE; col++) {
     let count = 1;
     let color = board[0][col];
@@ -402,13 +433,56 @@ function findAllMatches() {
           for (let i = row - count; i < row; i++) {
             matches.add(`${i},${col}`);
           }
-          if (count >= 4) {
-            createBonus(row - Math.floor(count/2), col, count);
-          }
         }
         if (row < BOARD_SIZE) {
           color = board[row][col];
           count = 1;
+        }
+      }
+    }
+  }
+
+  // Диагональные совпадения (слева-вверху направо-вниз)
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      const color = board[row][col];
+      if (color === 0 || color > 100) continue;
+
+      let count = 1;
+      let r = row + 1, c = col + 1;
+
+      while (r < BOARD_SIZE && c < BOARD_SIZE && board[r][c] === color) {
+        count++;
+        r++;
+        c++;
+      }
+
+      if (count >= MATCH_LENGTH) {
+        for (let i = 0; i < count; i++) {
+          matches.add(`${row + i},${col + i}`);
+        }
+      }
+    }
+  }
+
+  // Диагональные совпадения (справа-вверху слева-вниз)
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = BOARD_SIZE - 1; col >= 0; col--) {
+      const color = board[row][col];
+      if (color === 0 || color > 100) continue;
+
+      let count = 1;
+      let r = row + 1, c = col - 1;
+
+      while (r < BOARD_SIZE && c >= 0 && board[r][c] === color) {
+        count++;
+        r++;
+        c--;
+      }
+
+      if (count >= MATCH_LENGTH) {
+        for (let i = 0; i < count; i++) {
+          matches.add(`${row + i},${col - i}`);
         }
       }
     }
@@ -425,8 +499,15 @@ function createBonus(row, col, count) {
   if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return;
   if (board[row][col] === 0) return;
   
-  // 4 шара = бомба, 5+ = радужный
-  const bonusType = count >= 5 ? 104 : 101;
+  // 4 шара = линейная бомба, 5 = бомба 3x3, 6+ = радужный
+  let bonusType;
+  if (count >= 6) {
+    bonusType = 104; // Радужный шар
+  } else if (count >= 5) {
+    bonusType = 101; // Бомба
+  } else {
+    bonusType = 102; // Линейная бомба (горизонтальная по умолчанию)
+  }
   board[row][col] = bonusType;
 }
 
@@ -464,6 +545,75 @@ async function processMatches(matches) {
     board[row][col] = 0;
   }
 
+  // Создаём бонусы на месте совпадений 4+
+  const bonusesToCreate = new Map(); // Запоминаем позиции для бонусов
+  
+  // Проверяем горизонтальные совпадения 4+
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    let startCol = -1;
+    let count = 1;
+    let color = board[row][0];
+    
+    for (let col = 1; col <= BOARD_SIZE; col++) {
+      if (col < BOARD_SIZE && board[row][col] === 0 && color !== 0) {
+        // Пересчитаем совпадение из удаленных шариков
+        const actualMatches = [];
+        for (let i = startCol; i < col; i++) {
+          if (matches.some(m => m.row === row && m.col === i)) {
+            actualMatches.push(i);
+          }
+        }
+        if (actualMatches.length >= 4) {
+          const centerCol = actualMatches[Math.floor(actualMatches.length / 2)];
+          bonusesToCreate.set(`${row},${centerCol}`, 4);
+        }
+      }
+    }
+  }
+
+  // Проверяем вертикальные совпадения 4+
+  for (let col = 0; col < BOARD_SIZE; col++) {
+    let startRow = -1;
+    let count = 1;
+    let color = board[0][col];
+    
+    for (let row = 1; row <= BOARD_SIZE; row++) {
+      if (row < BOARD_SIZE && board[row][col] === 0 && color !== 0) {
+        // Пересчитаем совпадение из удаленных шариков
+        const actualMatches = [];
+        for (let i = startRow; i < row; i++) {
+          if (matches.some(m => m.row === i && m.col === col)) {
+            actualMatches.push(i);
+          }
+        }
+        if (actualMatches.length >= 4) {
+          const centerRow = actualMatches[Math.floor(actualMatches.length / 2)];
+          bonusesToCreate.set(`${centerRow},${col}`, 4);
+        }
+      }
+    }
+  }
+
+  // Усовершенствованный поиск совпадений и создание бонусов
+  const matchLines = findMatchLines(matches);
+  for (const line of matchLines) {
+    if (line.length >= 4) {
+      const centerIdx = Math.floor(line.length / 2);
+      const { row, col } = line[centerIdx];
+      
+      // Определяем тип бонуса на основе длины совпадения
+      let bonusType;
+      if (line.length >= 6) {
+        bonusType = 104; // Радужный шар (удаляет цвет)
+      } else if (line.length >= 5) {
+        bonusType = 101; // Бомба 3x3
+      } else {
+        bonusType = 102; // Линейная бомба
+      }
+      board[row][col] = bonusType;
+    }
+  }
+
   await applyGravity();
   await fillTopRows();
 
@@ -479,6 +629,56 @@ async function processMatches(matches) {
   checkAchievements();
 }
 
+// === Вспомогательная функция для поиска линий совпадений ===
+function findMatchLines(matches) {
+  const lines = [];
+  const used = new Set();
+
+  // Горизонтальные линии
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    let line = [];
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      const key = `${row},${col}`;
+      if (matches.some(m => m.row === row && m.col === col) && !used.has(key)) {
+        line.push({ row, col });
+      } else if (line.length > 0) {
+        if (line.length >= 3) {
+          lines.push(line);
+          line.forEach(pos => used.add(`${pos.row},${pos.col}`));
+        }
+        line = [];
+      }
+    }
+    if (line.length >= 3) {
+      lines.push(line);
+      line.forEach(pos => used.add(`${pos.row},${pos.col}`));
+    }
+  }
+
+  // Вертикальные линии
+  for (let col = 0; col < BOARD_SIZE; col++) {
+    let line = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      const key = `${row},${col}`;
+      if (matches.some(m => m.row === row && m.col === col) && !used.has(key)) {
+        line.push({ row, col });
+      } else if (line.length > 0) {
+        if (line.length >= 3) {
+          lines.push(line);
+          line.forEach(pos => used.add(`${pos.row},${pos.col}`));
+        }
+        line = [];
+      }
+    }
+    if (line.length >= 3) {
+      lines.push(line);
+      line.forEach(pos => used.add(`${pos.row},${pos.col}`));
+    }
+  }
+
+  return lines;
+}
+
 // === Проверка бонусов ===
 async function checkBonusMatches() {
   let activated = false;
@@ -486,8 +686,11 @@ async function checkBonusMatches() {
   for (let row = 0; row < BOARD_SIZE; row++) {
     for (let col = 0; col < BOARD_SIZE; col++) {
       const value = board[row][col];
-      if (value === 101) { // Бомба
+      if (value === 101) { // Бомба 3x3
         activateBomb(row, col);
+        activated = true;
+      } else if (value === 102) { // Линейная бомба
+        activateLinearBomb(row, col);
         activated = true;
       } else if (value === 104) { // Радужный
         activateRainbow(row, col);
@@ -512,6 +715,19 @@ function activateBomb(row, col) {
         board[r][c] = 0;
       }
     }
+  }
+  createExplosion(row, col);
+}
+
+function activateLinearBomb(row, col) {
+  board[row][col] = 0;
+  // Удаляем всю горизонтальную линию
+  for (let c = 0; c < BOARD_SIZE; c++) {
+    board[row][c] = 0;
+  }
+  // Удаляем всю вертикальную линию
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    board[r][col] = 0;
   }
   createExplosion(row, col);
 }

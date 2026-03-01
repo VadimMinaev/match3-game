@@ -2,14 +2,19 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Шары - игра для Сашули</title>
-  <link rel="stylesheet" href="style.css?v=6" />
+  <link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body>
   <div class="game-container">
     <header class="game-header">
-      <h1>🎮 Шары</h1>
+      <div class="header-top">
+        <h1>🎮 Шары</h1>
+        <button id="rules-btn" class="rules-btn" title="Правила">❓</button>
+      </div>
       <div class="difficulty-selector">
         <button class="diff-btn" data-diff="easy">Легко</button>
         <button class="diff-btn active" data-diff="normal">Норм</button>
@@ -39,32 +44,43 @@
     <div id="game-board" class="game-board"></div>
     
     <div class="controls">
-      <button id="pause-btn" class="control-btn" title="Пауза (P)">⏸️ Пауза</button>
-      <button id="restart-btn" class="control-btn" title="Рестарт (R)">🔄 Заново</button>
+      <button id="pause-btn" class="control-btn" title="Пауза (P)">⏸️</button>
+      <button id="restart-btn" class="control-btn" title="Рестарт (R)">🔄</button>
     </div>
-    
-    <div class="daily-challenge">
-      <h3>📅 Ежедневное задание</h3>
-      <p id="daily-progress">Загрузка...</p>
-    </div>
-    
-    <div class="achievements-panel">
-      <h3>🏆 Достижения</h3>
-      <div id="achievements-list" class="achievements-list"></div>
-    </div>
-    
-    <div class="game-rules">
-      <h2>Правила игры</h2>
-      <ul>
-        <li>Соединяйте 3+ шарика одного цвета</li>
-        <li>4 шарика = 💣 бомба (взрывает 3x3)</li>
-        <li>5 шариков = 🌈 радужный (удаляет все одного цвета)</li>
-        <li>Комбо = больше очков!</li>
-        <li>Неудачный ход = штраф очков</li>
-      </ul>
+  </div>
+
+  <!-- Модалка с правилами -->
+  <div id="rules-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📖 Правила игры</h2>
+        <button class="modal-close" id="close-rules">✕</button>
+      </div>
+      <div class="modal-body">
+        <h3>🎯 Основы</h3>
+        <ul>
+          <li>Соединяйте 3+ шарика одного цвета</li>
+          <li>Неудачный ход = штраф очков</li>
+          <li>Комбо = больше очков!</li>
+        </ul>
+        
+        <h3>💣 Бонусы</h3>
+        <ul>
+          <li>🟠 4 шарика = <strong>Линейная бомба</strong> (удаляет линию)</li>
+          <li>🔴 5 шариков = <strong>Бомба 3×3</strong> (взрывает куб)</li>
+          <li>🌈 6+ шариков = <strong>Радужный шар</strong> (удаляет цвет)</li>
+        </ul>
+        
+        <h3>⚡ Советы</h3>
+        <ul>
+          <li>Ищите совпадения в разных направлениях</li>
+          <li>Активируйте бонусы для больших взрывов</li>
+          <li>Планируйте вперёд!</li>
+        </ul>
+      </div>
     </div>
   </div>
   
-  <script src="game.js?v=6"></script>
+  <script src="game.js?v=7"></script>
 </body>
 </html>

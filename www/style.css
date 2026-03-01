@@ -64,13 +64,13 @@ body {
     0 8px 32px rgba(0, 0, 0, 0.7),
     inset 0 0 15px rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  width: 100%;
+  width: 95vw;
   height: auto; /* allow container to size to content on small screens */
-  max-width: var(--board-size);
+  max-width: 520px; /* match desktop card width from screenshot */
   max-height: none;
   position: relative;
   overflow: visible;
-  margin: 0 auto 12px;
+  margin: 6px auto 12px;
   display: flex;
   flex-direction: column;
   align-items: stretch;

@@ -748,11 +748,11 @@ body {
   /* On mobile, avoid large vertical centering — push container toward top */
   body {
     align-items: flex-start;
-    padding-top: 12px;
+    padding-top: 6px; /* reduced to lift container further */
   }
 
   .game-container {
-    margin-top: 6px; /* small gap from top */
+    margin-top: 0px; /* remove extra gap from top */
   }
 }
 

@@ -768,7 +768,7 @@ function findMatchLines(matches) {
 // === Проверка бонусов ===
 async function checkBonusMatches() {
   let activated = false;
-  
+
   for (let row = 0; row < BOARD_SIZE; row++) {
     for (let col = 0; col < BOARD_SIZE; col++) {
       const value = board[row][col];
@@ -784,9 +784,19 @@ async function checkBonusMatches() {
       }
     }
   }
-  
+
   if (activated) {
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Покажем эффект и перерисуем доску
+    renderBoard();
+    // Небольшая задержка чтобы анимации сработали
+    await new Promise(resolve => setTimeout(resolve, 260));
+
+    // После срабатывания бонусов применяем гравитацию и заполняем сверху
+    await applyGravity();
+    await fillTopRows();
+
+    // Возможно после взрывов появились новые бонусы/совпадения — проверим рекурсивно
+    await checkBonusMatches();
   }
 }
 

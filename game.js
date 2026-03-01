@@ -1,7 +1,7 @@
 // === Конфигурация ===
 const BOARD_COLS = 8;
 const BOARD_ROWS = 8;
-const COLORS_COUNT = 6;
+const COLORS_COUNT = 8;  // Максимальное количество цветов (для hard)
 const MATCH_LENGTH = 3;
 
 // Кэш для DOM элементов
@@ -163,11 +163,14 @@ function fillBoardWithNoMatches() {
 }
 
 function getRandomColor() {
-  // На сложном уровне реже выпадают нужные цвета
-  if (gameState.difficulty === 'hard') {
-    return Math.floor(Math.random() * COLORS_COUNT) + 1;
-  }
-  return Math.floor(Math.random() * COLORS_COUNT) + 1;
+  // На сложном уровне больше цветов (сложнее собрать комбинацию)
+  const colorsByDifficulty = {
+    easy: 4,      // 4 цвета
+    normal: 6,    // 6 цветов
+    hard: 8       // 8 цветов
+  };
+  const colorsCount = colorsByDifficulty[gameState.difficulty] || 6;
+  return Math.floor(Math.random() * colorsCount) + 1;
 }
 
 function hasMatchAt(row, col) {
@@ -229,7 +232,18 @@ function setupEventListeners() {
   if (restartBtn) {
     restartBtn.addEventListener('click', restartGame);
   }
-  
+
+  // Обработчики кнопок сложности
+  const diffBtns = document.querySelectorAll('.diff-btn');
+  diffBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      diffBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      gameState.difficulty = btn.dataset.diff;
+      restartGame();
+    });
+  });
+
   // Обработчики модальки с правилами
   const rulesBtn = document.getElementById('rules-btn');
   const rulesModal = document.getElementById('rules-modal');

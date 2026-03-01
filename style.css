@@ -66,7 +66,14 @@ body {
 /* Мобильные - на весь экран */
 @media (max-width: 768px) {
   body {
-    display: block;
+    display: -webkit-box;
+    display: flex;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
     height: 100dvh;
     overflow: hidden;
   }
@@ -374,9 +381,17 @@ body {
   background: linear-gradient(135deg, #d966ff, #9933cc); 
   border: 1px solid #7a29a3;
 }
-.ball[data-color="6"] { 
-  background: linear-gradient(135deg, #4dffff, #00cccc); 
+.ball[data-color="6"] {
+  background: linear-gradient(135deg, #4dffff, #00cccc);
   border: 1px solid #009999;
+}
+.ball[data-color="7"] {
+  background: linear-gradient(135deg, #ff66a3, #ff1a66);
+  border: 1px solid #cc0052;
+}
+.ball[data-color="8"] {
+  background: linear-gradient(135deg, #66ff66, #00cc00);
+  border: 1px solid #009900;
 }
 
 /* Bonus balls */
@@ -982,7 +997,7 @@ body {
     height: auto;
     max-height: 95dvh;
     justify-content: flex-start;
-    margin: 10dvh auto;
+    margin: auto;
   }
 
   .game-header h1 {
@@ -1072,7 +1087,8 @@ body {
   }
   
   .game-container {
-    margin: 5dvh auto;
+    margin: auto;
+    padding: 4px;
   }
 }
 

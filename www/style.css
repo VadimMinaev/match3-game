@@ -51,6 +51,13 @@ body {
   overflow-x: hidden;
 }
 
+@media (min-width: 768px) {
+  body {
+    max-width: 520px;
+    margin: 0 auto;
+  }
+}
+
 .game-container {
   text-align: center;
   padding: 8px;
@@ -71,6 +78,13 @@ body {
   margin: 0;
   display: flex;
   flex-direction: column;
+  z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .game-container {
+    max-height: 95vh;
+  }
 }
 
 .game-container::before {
@@ -407,9 +421,10 @@ body {
   display: flex !important;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
   backdrop-filter: blur(5px);
   animation: fadeIn 0.3s ease;
+  pointer-events: auto;
 }
 
 @keyframes fadeIn {
@@ -455,8 +470,8 @@ body {
 }
 
 .modal-close {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: none;
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
@@ -464,6 +479,9 @@ body {
   cursor: pointer;
   font-size: 20px;
   transition: all 0.2s ease;
+  position: relative;
+  z-index: 2001;
+  flex-shrink: 0;
 }
 
 .modal-close:hover {

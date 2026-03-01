@@ -1,5 +1,6 @@
 // === Конфигурация ===
-const BOARD_SIZE = 8;
+const BOARD_COLS = 8;
+const BOARD_ROWS = 15;
 const COLORS_COUNT = 6;
 const MATCH_LENGTH = 3;
 
@@ -140,15 +141,15 @@ function generateDailyChallenge() {
 
 // === Создание доски ===
 function createBoard() {
-  board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(0));
+  board = Array(BOARD_ROWS).fill(null).map(() => Array(BOARD_COLS).fill(0));
   fillBoardWithNoMatches();
   combo = 0;
   moves = 0;
 }
 
 function fillBoardWithNoMatches() {
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let row = 0; row < BOARD_ROWS; row++) {
+    for (let col = 0; col < BOARD_COLS; col++) {
       let validColor;
       let attempts = 0;
       do {
@@ -177,22 +178,22 @@ function hasMatchAt(row, col) {
   let i = col - 1;
   while (i >= 0 && board[row][i] === color) { count++; i--; }
   i = col + 1;
-  while (i < BOARD_SIZE && board[row][i] === color) { count++; i++; }
+  while (i < BOARD_COLS && board[row][i] === color) { count++; i++; }
   if (count >= MATCH_LENGTH) return true;
 
   count = 1;
   i = row - 1;
   while (i >= 0 && board[i][col] === color) { count++; i--; }
   i = row + 1;
-  while (i < BOARD_SIZE && board[i][col] === color) { count++; i++; }
+  while (i < BOARD_ROWS && board[i][col] === color) { count++; i++; }
   return count >= MATCH_LENGTH;
 }
 
 // === Отрисовка ===
 function renderBoard() {
   gameBoardEl.innerHTML = '';
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let row = 0; row < BOARD_ROWS; row++) {
+    for (let col = 0; col < BOARD_COLS; col++) {
       const ball = document.createElement('div');
       ball.className = 'ball';
       const value = board[row][col];
@@ -322,15 +323,15 @@ function handleBallClick(event) {
 let touchStartPos = null;
 let touchTarget = null;
 let touchTimeout = null;
+let touchStartTime = 0;
 
 function handleTouchStart(event) {
   if (isProcessing || isPaused) return;
   const touch = event.touches[0];
   touchStartPos = { x: touch.clientX, y: touch.clientY };
   touchTarget = event.currentTarget;
-  
-  // Предотвращаем стандартное поведение (скролл и т.д.)
-  event.preventDefault();
+  touchStartTime = Date.now();
+  // Не вызываем preventDefault - позволяем сработать клику
 }
 
 function handleTouchEnd(event) {
@@ -339,40 +340,37 @@ function handleTouchEnd(event) {
   const dx = touch.clientX - touchStartPos.x;
   const dy = touch.clientY - touchStartPos.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
+  const deltaTime = Date.now() - touchStartTime;
 
-  // Если свайп короткий — игнорируем (сработает клик)
-  if (distance < 50) {
-    touchStartPos = null;
-    touchTarget = null;
-    return;
+  // Если это длинный тап (>300ms) или свайп - обрабатываем как свайп
+  if (distance >= 50 || deltaTime > 300) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!touchTarget) return;
+    const row = parseInt(touchTarget.dataset.row);
+    const col = parseInt(touchTarget.dataset.col);
+
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    let targetRow = row;
+    let targetCol = col;
+
+    if (absDx > absDy) {
+      targetCol += dx > 0 ? 1 : -1;
+    } else {
+      targetRow += dy > 0 ? 1 : -1;
+    }
+
+    if (targetRow >= 0 && targetRow < BOARD_ROWS &&
+        targetCol >= 0 && targetCol < BOARD_COLS &&
+        board[targetRow][targetCol] !== 0) {
+      selectedBall = { row, col };
+      attemptSwap(row, col, targetRow, targetCol);
+      selectedBall = null;
+    }
   }
-
-  // Это свайп — предотвращаем клик и меняем шары
-  event.preventDefault();
-  event.stopPropagation();
-
-  if (!touchTarget) return;
-  const row = parseInt(touchTarget.dataset.row);
-  const col = parseInt(touchTarget.dataset.col);
-
-  const absDx = Math.abs(dx);
-  const absDy = Math.abs(dy);
-  let targetRow = row;
-  let targetCol = col;
-
-  if (absDx > absDy) {
-    targetCol += dx > 0 ? 1 : -1;
-  } else {
-    targetRow += dy > 0 ? 1 : -1;
-  }
-
-  if (targetRow >= 0 && targetRow < BOARD_SIZE &&
-      targetCol >= 0 && targetCol < BOARD_SIZE &&
-      board[targetRow][targetCol] !== 0) {
-    selectedBall = { row, col };
-    attemptSwap(row, col, targetRow, targetCol);
-    selectedBall = null;
-  }
+  // Если короткий тап - сработает обычный клик
   touchStartPos = null;
   touchTarget = null;
 }
@@ -485,11 +483,11 @@ function findAllMatches() {
   const matches = new Set();
 
   // Горизонтальные совпадения
-  for (let row = 0; row < BOARD_SIZE; row++) {
+  for (let row = 0; row < BOARD_ROWS; row++) {
     let count = 1;
     let color = board[row][0];
-    for (let col = 1; col <= BOARD_SIZE; col++) {
-      if (col < BOARD_SIZE && board[row][col] === color && color !== 0 && color < 100) {
+    for (let col = 1; col <= BOARD_COLS; col++) {
+      if (col < BOARD_COLS && board[row][col] === color && color !== 0 && color < 100) {
         count++;
       } else {
         if (count >= MATCH_LENGTH) {
@@ -497,7 +495,7 @@ function findAllMatches() {
             matches.add(`${row},${i}`);
           }
         }
-        if (col < BOARD_SIZE) {
+        if (col < BOARD_COLS) {
           color = board[row][col];
           count = 1;
         }
@@ -506,11 +504,11 @@ function findAllMatches() {
   }
 
   // Вертикальные совпадения
-  for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let col = 0; col < BOARD_COLS; col++) {
     let count = 1;
     let color = board[0][col];
-    for (let row = 1; row <= BOARD_SIZE; row++) {
-      if (row < BOARD_SIZE && board[row][col] === color && color !== 0 && color < 100) {
+    for (let row = 1; row <= BOARD_ROWS; row++) {
+      if (row < BOARD_ROWS && board[row][col] === color && color !== 0 && color < 100) {
         count++;
       } else {
         if (count >= MATCH_LENGTH) {
@@ -518,7 +516,7 @@ function findAllMatches() {
             matches.add(`${i},${col}`);
           }
         }
-        if (row < BOARD_SIZE) {
+        if (row < BOARD_ROWS) {
           color = board[row][col];
           count = 1;
         }
@@ -527,15 +525,15 @@ function findAllMatches() {
   }
 
   // Диагональные совпадения (слева-вверху направо-вниз)
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let row = 0; row < BOARD_ROWS; row++) {
+    for (let col = 0; col < BOARD_COLS; col++) {
       const color = board[row][col];
       if (color === 0 || color > 100) continue;
 
       let count = 1;
       let r = row + 1, c = col + 1;
 
-      while (r < BOARD_SIZE && c < BOARD_SIZE && board[r][c] === color) {
+      while (r < BOARD_ROWS && c < BOARD_COLS && board[r][c] === color) {
         count++;
         r++;
         c++;
@@ -550,15 +548,15 @@ function findAllMatches() {
   }
 
   // Диагональные совпадения (справа-вверху слева-вниз)
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = BOARD_SIZE - 1; col >= 0; col--) {
+  for (let row = 0; row < BOARD_ROWS; row++) {
+    for (let col = BOARD_COLS - 1; col >= 0; col--) {
       const color = board[row][col];
       if (color === 0 || color > 100) continue;
 
       let count = 1;
       let r = row + 1, c = col - 1;
 
-      while (r < BOARD_SIZE && c >= 0 && board[r][c] === color) {
+      while (r < BOARD_ROWS && c >= 0 && board[r][c] === color) {
         count++;
         r++;
         c--;
@@ -573,21 +571,21 @@ function findAllMatches() {
   }
 
   // Г-образные совпадения (крест-паттерны)
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let row = 0; row < BOARD_ROWS; row++) {
+    for (let col = 0; col < BOARD_COLS; col++) {
       const color = board[row][col];
       if (color === 0 || color > 100) continue;
 
       // Подсчитаем горизонтальную линию
       let hLeft = 0, hRight = 0;
       for (let c = col - 1; c >= 0 && board[row][c] === color; c--) hLeft++;
-      for (let c = col + 1; c < BOARD_SIZE && board[row][c] === color; c++) hRight++;
+      for (let c = col + 1; c < BOARD_COLS && board[row][c] === color; c++) hRight++;
       const hTotal = hLeft + hRight + 1; // +1 за центральный шар
 
       // Подсчитаем вертикальную линию
       let vUp = 0, vDown = 0;
       for (let r = row - 1; r >= 0 && board[r][col] === color; r--) vUp++;
-      for (let r = row + 1; r < BOARD_SIZE && board[r][col] === color; r++) vDown++;
+      for (let r = row + 1; r < BOARD_ROWS && board[r][col] === color; r++) vDown++;
       const vTotal = vUp + vDown + 1; // +1 за центральный шар
 
       // Если есть хотя бы 3 в одном направлении И хотя бы 3 в другом - это Г совпадение
@@ -616,7 +614,7 @@ function findAllMatches() {
 
 // === Создание бонуса ===
 function createBonus(row, col, count) {
-  if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return;
+  if (row < 0 || row >= BOARD_ROWS || col < 0 || col >= BOARD_COLS) return;
   if (board[row][col] === 0) return;
   
   // 4 шара = линейная бомба, 5 = бомба 3x3, 6+ = радужный
@@ -669,13 +667,13 @@ async function processMatches(matches) {
   const bonusesToCreate = new Map(); // Запоминаем позиции для бонусов
   
   // Проверяем горизонтальные совпадения 4+
-  for (let row = 0; row < BOARD_SIZE; row++) {
+  for (let row = 0; row < BOARD_ROWS; row++) {
     let startCol = -1;
     let count = 1;
     let color = board[row][0];
-    
-    for (let col = 1; col <= BOARD_SIZE; col++) {
-      if (col < BOARD_SIZE && board[row][col] === 0 && color !== 0) {
+
+    for (let col = 1; col <= BOARD_COLS; col++) {
+      if (col < BOARD_COLS && board[row][col] === 0 && color !== 0) {
         // Пересчитаем совпадение из удаленных шариков
         const actualMatches = [];
         for (let i = startCol; i < col; i++) {
@@ -692,13 +690,13 @@ async function processMatches(matches) {
   }
 
   // Проверяем вертикальные совпадения 4+
-  for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let col = 0; col < BOARD_COLS; col++) {
     let startRow = -1;
     let count = 1;
     let color = board[0][col];
-    
-    for (let row = 1; row <= BOARD_SIZE; row++) {
-      if (row < BOARD_SIZE && board[row][col] === 0 && color !== 0) {
+
+    for (let row = 1; row <= BOARD_ROWS; row++) {
+      if (row < BOARD_ROWS && board[row][col] === 0 && color !== 0) {
         // Пересчитаем совпадение из удаленных шариков
         const actualMatches = [];
         for (let i = startRow; i < row; i++) {
@@ -755,9 +753,9 @@ function findMatchLines(matches) {
   const used = new Set();
 
   // Горизонтальные линии
-  for (let row = 0; row < BOARD_SIZE; row++) {
+  for (let row = 0; row < BOARD_ROWS; row++) {
     let line = [];
-    for (let col = 0; col < BOARD_SIZE; col++) {
+    for (let col = 0; col < BOARD_COLS; col++) {
       const key = `${row},${col}`;
       if (matches.some(m => m.row === row && m.col === col) && !used.has(key)) {
         line.push({ row, col });
@@ -776,9 +774,9 @@ function findMatchLines(matches) {
   }
 
   // Вертикальные линии
-  for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let col = 0; col < BOARD_COLS; col++) {
     let line = [];
-    for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let row = 0; row < BOARD_ROWS; row++) {
       const key = `${row},${col}`;
       if (matches.some(m => m.row === row && m.col === col) && !used.has(key)) {
         line.push({ row, col });
@@ -802,9 +800,9 @@ function findMatchLines(matches) {
 // === Проверка бонусов ===
 async function checkBonusMatches() {
   let activated = false;
-  
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
+
+  for (let row = 0; row < BOARD_ROWS; row++) {
+    for (let col = 0; col < BOARD_COLS; col++) {
       const value = board[row][col];
       if (value === 101) { // Бомба 3x3
         activateBomb(row, col);
@@ -831,7 +829,7 @@ function activateBomb(row, col) {
     for (let dc = -1; dc <= 1; dc++) {
       const r = row + dr;
       const c = col + dc;
-      if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+      if (r >= 0 && r < BOARD_ROWS && c >= 0 && c < BOARD_COLS) {
         board[r][c] = 0;
       }
     }
@@ -842,11 +840,11 @@ function activateBomb(row, col) {
 function activateLinearBomb(row, col) {
   board[row][col] = 0;
   // Удаляем всю горизонтальную линию
-  for (let c = 0; c < BOARD_SIZE; c++) {
+  for (let c = 0; c < BOARD_COLS; c++) {
     board[row][c] = 0;
   }
   // Удаляем всю вертикальную линию
-  for (let r = 0; r < BOARD_SIZE; r++) {
+  for (let r = 0; r < BOARD_ROWS; r++) {
     board[r][col] = 0;
   }
   createExplosion(row, col);
@@ -856,9 +854,9 @@ function activateRainbow(row, col) {
   // Удаляем все шары одного цвета
   const colors = [1, 2, 3, 4, 5, 6];
   const randomColor = colors[Math.floor(Math.random() * colors.length)];
-  
-  for (let r = 0; r < BOARD_SIZE; r++) {
-    for (let c = 0; c < BOARD_SIZE; c++) {
+
+  for (let r = 0; r < BOARD_ROWS; r++) {
+    for (let c = 0; c < BOARD_COLS; c++) {
       if (board[r][c] === randomColor) {
         board[r][c] = 0;
       }
@@ -871,9 +869,9 @@ function activateRainbow(row, col) {
 async function applyGravity() {
   const moves = [];
 
-  for (let col = 0; col < BOARD_SIZE; col++) {
-    let writeIndex = BOARD_SIZE - 1;
-    for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+  for (let col = 0; col < BOARD_COLS; col++) {
+    let writeIndex = BOARD_ROWS - 1;
+    for (let row = BOARD_ROWS - 1; row >= 0; row--) {
       if (board[row][col] !== 0) {
         if (writeIndex !== row) {
           moves.push({ fromRow: row, fromCol: col, toRow: writeIndex, toCol: col });
@@ -943,8 +941,8 @@ async function applyGravity() {
 // === Заполнение сверху ===
 async function fillTopRows() {
   const newBalls = [];
-  for (let col = 0; col < BOARD_SIZE; col++) {
-    for (let row = 0; row < BOARD_SIZE; row++) {
+  for (let col = 0; col < BOARD_COLS; col++) {
+    for (let row = 0; row < BOARD_ROWS; row++) {
       if (board[row][col] === 0) {
         board[row][col] = getRandomColor();
         newBalls.push({ row, col });
@@ -964,7 +962,7 @@ async function animateSpawning(newBalls) {
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
   const animDuration = 400;
-  const cellHeight = gameBoardEl.offsetHeight / BOARD_SIZE;
+  const cellHeight = gameBoardEl.offsetHeight / BOARD_ROWS;
   const startTime = performance.now();
 
   const spawnData = [];

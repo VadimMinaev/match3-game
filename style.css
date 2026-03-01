@@ -290,14 +290,14 @@ body {
   display: grid;
   -webkit-grid-template-columns: repeat(8, 1fr);
   grid-template-columns: repeat(8, 1fr);
-  -webkit-grid-template-rows: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
+  -webkit-grid-template-rows: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
   gap: var(--gap-size);
   background: var(--bg-dark);
   padding: var(--gap-size);
   border-radius: 10px;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 8 / 15;
   max-height: calc(100vh - 200px);
   margin: 0 auto 6px;
   position: relative;
@@ -1016,6 +1016,7 @@ body {
   .game-board {
     max-height: calc(100dvh - 140px);
     margin-bottom: 4px;
+    aspect-ratio: 8 / 15;
   }
 }
 
@@ -1057,6 +1058,7 @@ body {
   
   .game-board {
     max-height: calc(100dvh - 130px);
+    aspect-ratio: 8 / 15;
   }
   
   .controls {

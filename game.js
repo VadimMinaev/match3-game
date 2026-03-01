@@ -198,36 +198,70 @@ function setupEventListeners() {
   const rulesModal = document.getElementById('rules-modal');
   const closeRulesBtn = document.getElementById('close-rules');
   
+  function openRulesModal() {
+    if (rulesModal) {
+      rulesModal.classList.remove('hidden');
+      rulesModal.style.display = 'flex';
+      console.log('Открыта модалка');
+    }
+  }
+  
+  function closeRulesModal() {
+    if (rulesModal) {
+      rulesModal.classList.add('hidden');
+      rulesModal.style.display = 'none';
+      console.log('Закрыта модалка');
+    }
+  }
+  
   if (rulesBtn) {
-    rulesBtn.addEventListener('click', () => {
-      if (rulesModal) rulesModal.style.display = 'flex';
+    rulesBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openRulesModal();
+    });
+    rulesBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openRulesModal();
     });
   }
   
   if (closeRulesBtn) {
-    closeRulesBtn.addEventListener('click', () => {
-      if (rulesModal) rulesModal.style.display = 'none';
+    closeRulesBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeRulesModal();
+    });
+    closeRulesBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeRulesModal();
     });
   }
   
   if (rulesModal) {
     rulesModal.addEventListener('click', (e) => {
       if (e.target === rulesModal) {
-        rulesModal.style.display = 'none';
+        e.preventDefault();
+        e.stopPropagation();
+        closeRulesModal();
       }
     });
   }
   
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      if (rulesModal && rulesModal.style.display === 'flex') {
+    if (rulesModal && rulesModal.style.display === 'flex') {
+      if (e.key === 'Escape') {
+        e.preventDefault();
         rulesModal.style.display = 'none';
-      } else {
-        togglePause();
+        rulesModal.classList.add('hidden');
+        console.log('Закрыта по Escape');
       }
+    } else {
+      if (e.key === 'Escape' || e.key === 'p') togglePause();
+      if (e.key === 'r') restartGame();
     }
-    if (e.key === 'p') togglePause();
-    if (e.key === 'r') restartGame();
   });
 }
 

@@ -29,6 +29,12 @@
   }
 }
 
+@media (min-width: 1200px) {
+  :root {
+    --board-size: 420px;
+  }
+}
+
 html, body {
   width: 100%;
   height: 100%;
@@ -425,11 +431,17 @@ body {
   backdrop-filter: blur(5px);
   animation: fadeIn 0.3s ease;
   pointer-events: auto;
+  cursor: pointer;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.modal.hidden {
+  display: none !important;
+  pointer-events: none;
 }
 
 .modal-content {
@@ -441,6 +453,8 @@ body {
   max-height: 85vh;
   overflow-y: auto;
   animation: slideUp 0.3s ease;
+  pointer-events: auto;
+  cursor: auto;
 }
 
 @keyframes slideUp {
@@ -461,6 +475,7 @@ body {
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
+  pointer-events: auto;
 }
 
 .modal-header h2 {
@@ -476,16 +491,30 @@ body {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
   border-radius: 50%;
-  cursor: pointer;
+  cursor: pointer !important;
   font-size: 20px;
   transition: all 0.2s ease;
   position: relative;
   z-index: 2001;
   flex-shrink: 0;
+  pointer-events: auto !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font-family: inherit;
 }
 
 .modal-close:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-close:active {
+  transform: scale(0.95);
 }
 
 .modal-body {
